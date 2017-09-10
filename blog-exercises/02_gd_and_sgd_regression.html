@@ -123,6 +123,150 @@ $(document).ready(function () {
 </div>
 
 
+<div id="descenso-en-gradiente" class="section level1">
+<h1>Descenso en gradiente</h1>
+<p>El descenso en gradiente pertenece a un tipo de algoritmos llamados de búsqueda de línea. Estos algoritmos buscan en cada iteración una dirección y actualizan el valor actual de acuerdo a esa dirección. Es decir, en la <span class="math inline">\(k\)</span>-ésima iteración, se tiene un valor <span class="math inline">\(\theta_k\)</span>, y se busca una dirección <span class="math inline">\(p_k\)</span> para actualizar al valor <span class="math inline">\(\theta_{k+1} = \theta_k + \alpha_k p_k\)</span>, donde <span class="math inline">\(\alpha_k &gt; 0\)</span> es la ‘distancia’ que se recorre en la dirección <span class="math inline">\(p_k\)</span>, y es llamada la longitud de paso. Una vez que se actualizó el valor de la iteración, se encuentra una nueva dirección de avance y se actualiza el valor. Esto se hace hasta que se cumpla cierto criterio de paro, siendo este usualmente que la norma del gradiente sea menor a un escalar pequeño y positivo.</p>
+<p>En el caso del descenso en gradiente, la dirección de avance <span class="math inline">\(p_k\)</span> es la del máximo descenso, es decir, el negativo del gradiente en la iteración actual <span class="math inline">\(-\nabla L(\theta_k)\)</span>, por lo que en cada iteración se hace</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:iteracion_descenso_grad}
+  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
+\end{equation}\]</span>
+<p>Al calcular la longitud de paso <span class="math inline">\(\alpha_k\)</span> se tiene un problema: se quiere un valor tal que la función objetivo <span class="math inline">\(L\)</span> se reduzca lo más posible, pero tampoco se quiere desperdiciar mucho tiempo escogiendo el valor. La mejor opción es el minimizador global de la función <span class="math inline">\(\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)\)</span>, pero es muy caro de calcular. Generalmente se utilizan heurísticas que consisten en elegir una sucesión de valores para <span class="math inline">\(\alpha_k\)</span> y probar cuál de todos satisface ciertas condiciones.</p>
+<p>Una de estas condiciones es llamada la condición de Armijo, y estipula que <span class="math inline">\(\alpha_k\)</span> debe generar un descenso suficiente en la función objetivo <span class="math inline">\(L\)</span>, medido como</p>
+<p><span class="math display">\[
+  L(\theta_k + \alpha_k p_k) \leq L(\theta_k) + c_1 \alpha_k \nabla L(\theta_k)^T p_k,
+\]</span></p>
+<p>para alguna constante <span class="math inline">\(c_1 \in (0, 1)\)</span>. Usualmente <span class="math inline">\(c_1\)</span> es pequeño, como <span class="math inline">\(10^{-4}\)</span>. Esta condición puede no ser suficiente, pues valores muy pequeños de <span class="math inline">\(\alpha_k\)</span> pueden hacer que se cumpla, y longitudes de paso muy pequeñas no son deseables. Una forma de arreglar esto es usar backtracking en el algoritmo. Este consiste en elegir un valor relativamente grande de <span class="math inline">\(\alpha_k\)</span> (algunos métodos inician con <span class="math inline">\(\alpha_k = 1\)</span>), y se inicia un subalgoritmo iterativo el cual reduce el valor de <span class="math inline">\(\alpha_k\)</span> hasta que se cumple la condición de Armijo.</p>
+<p>Hay muchas otras formas de escoger la longitud de paso <span class="math inline">\(\alpha_k\)</span>, las cuales van más allá del objetivo de este trabajo. Si se quisiera estudiar más a fondo este tema, se puede consultar el Nocedal para más detalles.</p>
+<p>Para explicar un poco mejor el concepto de descenso en gradiente, se presentan dos ejemplos, uno para regresión lineal y otro para regresión logística. Ambos ejemplos fueron implementados en el lenguaje para cómputo estadístico R.</p>
+<p>%%%%%%%%%%%%%%%% %%% Reg lineal %%%%%%%%%%%%%%%%</p>
+<p>En el caso de regresión lineal, en el caso general, se busca minimizar la función de pérdida cuadrática</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:perd_cuadratica_reg_lineal}
+  L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right)^2
+\end{equation}\]</span>
+<p>Tomando las derivadas parciales de , se tiene que para cada <span class="math inline">\(j \in \left\{1, \hdots, p \right\}\)</span></p>
+<span class="math display">\[\begin{equation}
+  \frac{\partial L}{\partial \beta_j} = 
+    -\frac{2}{n} \sum_{i = 1}^n \left( x_{ij} \ell_i(x, \beta) \right)
+\end{equation}\]</span>
+<p>donde <span class="math inline">\(x_{i1} = 1\)</span> para toda <span class="math inline">\(i \in \left\{1, \hdots, n \right\}\)</span> y</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:ele_i_reg_lineal}
+  \ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right).
+\end{equation}\]</span>
+<p>De aquí, se llega a que la dirección de descenso en gradiente en cada iteración es</p>
+<p><span class="math display">\[
+  \nabla_{\beta} L(x, \beta) = \left( \frac{\partial L}{\partial \beta_0}, \hdots, \frac{\partial L}{\partial \beta_p} \right)^T.
+\]</span></p>
+<p>En el ejemplo implementado, se generó un vector <span class="math inline">\(x \in \mathbb{R}^n\)</span> con <span class="math inline">\(n = 1000\)</span> tal que <span class="math inline">\(x_i \sim N(0, 1)\)</span> para cada <span class="math inline">\(i \in \left\{1, \hdots, n \right\}\)</span> y se construyó la variable respuesta <span class="math inline">\(y = \beta_0 + \beta_1x + \varepsilon\)</span> con <span class="math inline">\(\varepsilon \sim N(0, 1)\)</span>, <span class="math inline">\(\beta_0 = 2\)</span> y <span class="math inline">\(\beta_1 = 1\)</span>. Los datos generados se pueden ver en la figura EJEMPLO DE RE LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.</p>
+<p>Entonces, para minimizar la pérdida cuadrática , se empieza con un vector <span class="math inline">\(\beta^0 \in \mathbb{R}^2\)</span>, y en cada iteración, se actualiza</p>
+<p><span class="math display">\[
+  \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
+\]</span></p>
+<p>hasta un criterio de paro. En este caso, el criterio de paro era que la norma del gradiente <span class="math inline">\(\nabla_{\beta} L(x, \beta)\)</span> fuera menor a <span class="math inline">\(0.000001\)</span> o que se excediera de 100 iteraciones. El vector de parámetros inicial fue <span class="math inline">\(\beta^0 = (0, 0)^T\)</span>, y el valor de <span class="math inline">\(\alpha_k\)</span> fue <span class="math inline">\(0.1\)</span> para toda <span class="math inline">\(k\)</span> sin tomar en cuenta la condición de Armijo.</p>
+<p>Los valores del vector de parámetros en cada iteración se pueden ver en la figura</p>
+<p>ITERACIONES GD REG LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!</p>
+<p>El punto grande que se ve en la figura es el valor real de los parámetros (i.e. 2 y 1), y el tache que se ve es el valor obtenido utilizando el paquete lm de R. Se puede ver que el algoritmo implementado converge a estos valores. De hecho, el valor obtenido con el método implementado es exactamente igual al que regresa lm.</p>
+<p>%%%%%%%%%%%%%%%% %%% Reg logística %%%%%%%%%%%%%%%%</p>
+<p>En el caso de regresión logística, en el caso general, se busca minimizar la función de pérdida llamada devianza, definida como</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:devianza_reg_log}
+  L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
+     - \frac{2}{n} \sum_{i=1}^{n}{\ell_i(\beta)}
+\end{equation}\]</span>
+<p>donde <span class="math display">\[
+  \beta^T x_i = \sum_{j=0}^{p}{\beta_j x_{ij}},
+\]</span></p>
+<p><span class="math display">\[
+  h(w) = \frac{e^w}{1+e^w}
+\]</span></p>
+<p>y</p>
+<p><span class="math display">\[
+\ell_i(x) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)).
+\]</span></p>
+<p>Se tiene que</p>
+<p><span class="math display">\[
+  \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { \frac{\partial \ell_i}{\partial \beta_j} }
+\]</span></p>
+<p>y además, usando el hecho de que <span class="math inline">\(h'(w) = h(w)(1-h(w))\)</span>, se tiene</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:derivacion_ell_i_reg_log}
+  \begin{split}
+    \frac{\partial \ell_i}{\partial \beta_j} &amp; = 
+      \frac{y_i h'(\beta^T x_i) x_{ij} }  {h(\beta^T x_i)} + \frac{(1 - y_i) (-1) h'(\beta^T x_i) x_{ij}} {1 - h(\beta^T x_i)} \\
+      &amp; = \frac{h'(\beta^T x_i) x_{ij} y_i}{h(\beta^T x_i)} - \frac{(1 - y_i) h'(\beta^T x_i) x_{ij}}{1 - h((\beta^T x_i))} \\
+      &amp; = h'(\beta^T x_i) x_{ij} \left(\frac{y_i}{h(\beta^T x_i)} - \frac{1-y_i}{1-h(\beta^T x_i)} \right) \\
+      &amp; = h'(\beta^T x_i) x_{ij} \left(\frac{y_i - y_i h(\beta^T x_i) - 
+          h(\beta^T x_i) + y_i h(\beta^T x_i)}{h(\beta^T x_i)(1-h(\beta^T x_i))} \right) \\
+      &amp; = x_{ij}(y_i - h(\beta^T x_i)).
+  \end{split}
+\end{equation}\]</span>
+<p>Por lo tanto, se tiene que</p>
+<p><span class="math display">\[
+  \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { x_{ij}(y_i - h(\sum_{j=0}^{p}{\beta_j x_{ij}})) },
+\]</span></p>
+<p>donde nuevamente <span class="math inline">\(x_{i1} = 1\)</span> para toda <span class="math inline">\(i \in \left\{1, \hdots, n \right\}\)</span>.</p>
+<p>En el ejemplo implementado, se generó un vector <span class="math inline">\(x \in \mathbb{R}^n\)</span> con <span class="math inline">\(n = 1000\)</span> tal que <span class="math inline">\(x_i \sim N(0, 1)\)</span> para cada <span class="math inline">\(i \in \left\{1, \hdots, n \right\}\)</span> y se construyó la variable auxiliar <span class="math inline">\(p_i = \frac{1}{\exp \left( - \beta_0 - \beta_1 x_i \right)}\)</span> con <span class="math inline">\(\beta_0 = 1\)</span> y <span class="math inline">\(\beta_1 = 4\)</span>. Finalmente, la variable respuesta <span class="math inline">\(y\)</span> se construyó simulando una variables aleatorias Bernoulli, de tal forma que <span class="math inline">\(y_i \sim Bern(p_i)\)</span>. Los datos generados se pueden ver en la figura EJEMPLO DE REGRESIÓN LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.</p>
+<p>Entonces, para minimizar la devianza , exactamente igual que en el otro caso, se empieza con un vector <span class="math inline">\(\beta^0 \in \mathbb{R}^2\)</span>, y en cada iteración, se actualiza</p>
+<p><span class="math display">\[
+  \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
+\]</span></p>
+<p>hasta un criterio de paro. En este caso, el criterio de paro fue un poco más estricto: la norma del gradiente <span class="math inline">\(\nabla_{\beta} L(x, \beta)\)</span> debía ser menor a <span class="math inline">\(0.0001\)</span>, o el cociente de normas entre cada iteración fuera mayor a <span class="math inline">\(0.8\)</span>, o que se excediera de 500 iteraciones. El vector de parámetros inicial fue <span class="math inline">\(\beta^0 = (-10, 10)^T\)</span>. En este caso se hizo backtracking con un valor inicial <span class="math inline">\(\alpha_0 = 3\)</span>.</p>
+<p>Los valores del vector de parámetros en cada iteración se pueden ver en la figura</p>
+<p>IMAGEN DE ITERACIONES!!!!!!!!!!!!!!!!!!!!</p>
+<p>El punto grande que se ve en la figura es el valor real de los parámetros (i.e. 1 y 4), y el tache que se ve es el valor obtenido utilizando el paquete glm de R. Se puede ver que el algoritmo implementado converge a estos valores y, nuevamente, el valor obtenido con el método implementado es exactamente igual al que regresa el paquete utilizado (glm).</p>
+<p>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %%% SGD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</p>
+</div>
+<div id="descenso-en-gradiente-estocastico" class="section level1">
+<h1>Descenso en gradiente estocástico</h1>
+<p>En el aprendizaje estadístico es muy común encontrar problemas de optimización de la forma</p>
+<span class="math display">\[\begin{equation}
+  \label{eq:perd_gral_apr_est}
+  \min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{donde} \, \, 
+    L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+\end{equation}\]</span>
+<p>En los ejemplos de la subsección  se puede ver esto con claridad: las funciones de pérdida a minimizar son de la forma . El método de descenso en gradiente presentado en  utiliza iteraciones de la forma de la ecuación , es decir,</p>
+<p><span class="math display">\[
+  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
+\]</span></p>
+<p>lo cual involucra la evaluación de <span class="math inline">\(n\)</span> gradientes para después promediarlos. En los casos de aprendizaje automático de gran escala, el número de observaciones <span class="math inline">\(n\)</span> es grande, por lo que calcular estos gradientes puede resultar costoso. Debido a esto, surgen los métodos como descenso en gradiente estocástico, en los cuales el número de gradientes a evaluar no depende de <span class="math inline">\(n\)</span>, sino que es constante. Este método utiliza iteraciones de la forma</p>
+<p><span class="math display">\[
+  \theta_{k+1} = \theta_k - \frac{\alpha_k}{n} \nabla \psi_{i_k}(\theta_k),
+\]</span></p>
+<p>donde <span class="math inline">\(i_k \in \left\{1, 2, \hdots, n \right\}\)</span> es escogido aleatoriamente. El gradiente <span class="math inline">\(\nabla \psi_{i_k}(\theta_k)\)</span> es un estimador insesgado de <span class="math inline">\(\nabla L(\theta_k)\)</span>. De esta forma, cada iteración es muy barata pues involucra la evaluación de solamente un gradiente. Puede suceder que alguna <span class="math inline">\(\nabla \psi_{i_k}(\theta_k)\)</span> particular no otorgue una dirección de descenso partiendo de <span class="math inline">\(\theta_k\)</span>, pero, intuitivamente, en promedio sí se dan direcciones de descenso, de tal forma que le sucesión <span class="math inline">\(\left\{ \theta_0, \theta_1, \hdots \right\}\)</span> puede ser guiada a un minimizador <span class="math inline">\(\theta^*\)</span>.</p>
+<p>Para ilustrar este método, se implementaron los dos mismos ejemplos que en la sección anterior, es decir, la regresión lineal y la regresión logística.</p>
+<p>%%%%%%%%%%%%%%%% %%% Reg lineal %%%%%%%%%%%%%%%%</p>
+<p>En el caso de la regresión lineal, se desea minimizar la pérdida cuadrática definida en la ecuación . Aquí, si se utiliza la notación utilizada en la ecuación , cada <span class="math inline">\(\psi_i(x, \theta)\)</span> es</p>
+<p><span class="math display">\[
+  \psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
+\]</span></p>
+<p>con <span class="math inline">\(\ell_i(x, \beta)\)</span> definido en la ecuación . Se puede ver que la derivada parcial de <span class="math inline">\(\psi_i(x, \beta)\)</span> respecto a cada <span class="math inline">\(\beta_j\)</span> con <span class="math inline">\(j \in \left\{ 0, \hdots, p \right\}\)</span> es</p>
+<p><span class="math display">\[
+  \frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
+\]</span></p>
+<p>por lo que la dirección de avance en cada iteración del algoritmo es</p>
+<p><span class="math display">\[
+  \nabla_{\beta} \psi_i(x, \beta) = 
+    \left( \frac{\partial \psi_i}{\partial \beta_0}, \hdots, \frac{\partial \psi_i}{\partial \beta_p} \right).
+\]</span></p>
+<p>Nuevamente, el vector de parámetros iniciales fue <span class="math inline">\(\beta^0 = (0, 0)^T\)</span>. El criterio de paro era que la norma del gradiente <span class="math inline">\(\nabla_{\beta} L(x, \beta)\)</span> fuera menor a <span class="math inline">\(0.000001\)</span>, que se excediera de 300 iteraciones o que la norma dos al cuadrado de las diferencias del vector de parámetros entre una iteración y otra (i.e. <span class="math inline">\(\norm{\beta^{k+1} - \beta^k}^2_2\)</span>) fuera menor a <span class="math inline">\(10^{-15}\)</span>.</p>
+<p>Los valores del vector de parámetros en cada iteración se pueden ver en las figuras FIGURAS!!!!!!</p>
+<p>Para entender mejor estas imágenes, es pertinente explicar qué es un epoch. Un epoch es un conjunto de <span class="math inline">\(n\)</span> accesos al conjunto de datos. Es decir, en cada epoch, se evalúan los gradientes de todos los datos en el conjunto de entrenamiento.</p>
+<p>En la figura ITERACIONES!!! se muestran los valores de los parámetros para todos los gradientes en todos los epochs. En la figura LALALALALALA se muestran solo los valores al final de cada epoch para tener mayor claridad en la visualización. Se puede apreciar en la figura LALALALALA que, a diferencia de la figura LALALALALA donde las direcciones de descenso se ven más uniformes hacia una misma dirección, las direcciones van hacia todos lados en una especie de zig-zag que eventualmente llega a la solución.</p>
+<p>En ambas figuras se muestra un punto grande que representa el valor real de los parámetros (<span class="math inline">\(\beta_0=2\)</span> y <span class="math inline">\(\beta_1 = 1\)</span>) y el tache que representa el valor obtenido utilizando el paquete lm de R, pero en la figura LALALALALALA no se alcanza a distinguir tan bien, pero en ambas imágenes se puede ver que el algoritmo implementado converge a los valores deseados.</p>
+<p>%%%%%%%%%%%%%%%% %%% Reg logística %%%%%%%%%%%%%%%%</p>
+<p>Para la regresión logística ya se tienen hechos casi todos los cálculos necesarios en la subsección . Con la notación utilizada en la ecuación , cada <span class="math inline">\(\psi_i(x, \theta)\)</span> es</p>
+<p><span class="math display">\[
+  \psi_i(x, \theta) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) = \ell_i(x, \beta).
+\]</span></p>
+<p>Además, en las ecuaciones  se llega a que</p>
+<p><span class="math display">\[
+  \frac{\partial \ell_i}{\partial \beta_j} = \frac{\partial \psi_i}{\partial \beta_j} = x_{ij}(y_i - h(\beta^T x_i)).
+\]</span></p>
+<p>Por lo que ya se tiene todo lo necesario. En la implementación, el criterio de paro fue el mismo que en descenso en gradiente estocástico para regresión lineal: que la norma del gradiente <span class="math inline">\(\nabla_{\beta} L(x, \beta)\)</span> fuera menor a <span class="math inline">\(0.000001\)</span>, que se excediera de 300 iteraciones o que la norma dos al cuadrado de las diferencias del vector de parámetros entre una iteración y otra fuera menor a <span class="math inline">\(10^{-15}\)</span>.</p>
+<p>Los valores del vector de parámetros en cada iteración se pueden ver en las figuras LALALALALAL y LALALALALAL. Las explicaciones de estas dos imágenes son análogas a las de regresión lineal. Nuevamente, el valor obtenido con el método implementado converge al valor real y al que se obtuvo con el paquete glm.</p>
+</div>
 <div id="gradient-descent" class="section level1">
 <h1>Gradient descent</h1>
 <pre class="r"><code>library(tidyverse)
