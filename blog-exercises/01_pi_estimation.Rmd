@@ -1,17 +1,17 @@
 ---
 title: "Pi estimation using simulation"
 author: "Mario Becerra"
-date: "September 9, 2017"
+date: "September 8, 2017"
 output: html_document
 ---
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=F, warning=F}
 library(ggplot2)
 library(dplyr)
 set.seed(314)
 ```
 
-I'm gonna show a little simulation exercise. There are many ways to estimate the value of $\pi$, some more efficient than others. One of them is using simulation. The idea is that if you have a circle of radius 1, it will have an area of $\pi$. If you overlap a square with the circle such that they both have a centroid in the origin, like this in the following image.
+There are many ways to estimate the value of $\pi$, some more efficient than others. One of them is using Monte Carlo simulation. The idea is that if you have a circle of radius 1, it will have an area of $\pi$. You can fit a circle within a square of area 4, such that they both have a centroid in the origin, like shown in the following image.
 
 ```{r, echo = FALSE}
 circle <- tibble(x = seq(-1, 1, 0.001)) %>% 
@@ -30,7 +30,7 @@ tibble(x = c(1, 1, -1, -1, 1),
   theme_bw()
 ```
 
-Then, if one simulates $N$ points in the square, counts how many were inside the circle ($N_{in}$) and computes $\frac{N_{in}}{N}$, on gets a number close to $\frac{\pi}{4}$. And the bigger $N$ gets, the closer one is to the real value of $\pi$. So, to estimate $\pi$, one computes $4\frac{N_{in}}{N}$. An example of the simulated points can be seen in the following figure.
+Then, if one simulates $N$ points in the square, counts how many were inside the circle ($N_{in}$) and computes $\frac{N_{in}}{N}$, one gets a number close to $\frac{\pi}{4}$. And the bigger $N$ gets, the closer one is to the real value of $\pi$. So, to estimate $\pi$, one computes $4\frac{N_{in}}{N}$. An example of the simulated points can be seen in the following figure (done in R).
 
 ```{r}
 tibble(x = runif(10000, -1, 1),
@@ -71,26 +71,4 @@ tibble(size = sizes,
 
 ```
 
-Now, just to see how fast or slow the convergence to the real value of $\pi$ is, we compare it with another approximation.
-
-```{r}
-estimate_pi <- function(N){
-  n <- 0:N
-  aux <- (4/(8*n+1) - 2/(8*n+4) - 1/(8*n+5) - 1/(8*n+6))/(16^n)
-  sum(aux)
-}
-
-sizes2 <- 1:50
-estimates2 <- sapply(sizes2, estimate_pi)
-
-tibble(size = sizes2,
-       estimate = estimates2) %>% 
-  ggplot(aes(size, estimate)) +
-  geom_hline(yintercept = pi, size = 0.3, color = 'red') +
-  geom_point(size = 0.3) +
-  geom_line(group = 1, color = 'dark grey', alpha = 0.5) +
-  theme_bw()
-
-estimate_pi(1000)
-```
-
+We can see that the rate of convergence is slow. We had to simulate many points to get relatively close to the value of $\pi$. There are many more efficient methods to do this, but it's nice to see how with simulation we can get also estimate it.
