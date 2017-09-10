@@ -9,104 +9,214 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#Loss function optimization
 
+In statistical learning, one usually wants to find the parameters that minimise a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimization comes in. For this post, I use definitions from *Numerical Optimization* by Nocedal & Wright (2nd Ed) and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
 
-#Descenso en gradiente
-
-El descenso en gradiente pertenece a un tipo de algoritmos llamados de búsqueda de línea. Estos algoritmos buscan en cada iteración una dirección y actualizan el valor actual de acuerdo a esa dirección. Es decir, en la $k$-ésima iteración, se tiene un valor $\theta_k$, y se busca una dirección $p_k$ para actualizar al valor $\theta_{k+1} = \theta_k + \alpha_k p_k$, donde $\alpha_k > 0$ es la 'distancia' que se recorre en la dirección $p_k$, y es llamada la longitud de paso. Una vez que se actualizó el valor de la iteración, se encuentra una nueva dirección de avance y se actualiza el valor. Esto se hace hasta que se cumpla cierto criterio de paro, siendo este usualmente que la norma del gradiente sea menor a un escalar pequeño y positivo.
-
-En el caso del descenso en gradiente, la dirección de avance $p_k$ es la del máximo descenso, es decir, el negativo del gradiente en la iteración actual $-\nabla L(\theta_k)$, por lo que en cada iteración se hace
+The general problem of unrestricted optimisation is
 
 \begin{equation}
-  \label{eq:iteracion_descenso_grad}
-  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
+\label{eq:prob_opt_gral}
+\min_{\theta \in \mathbb{R}^p} L(\theta).
 \end{equation}
 
+For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimization algorithms are iterative. A solution is a vector $\theta^*$ called local minimiser, which makes the function $L$ to be minimised in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimiser if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
 
-Al calcular la longitud de paso $\alpha_k$ se tiene un problema: se quiere un valor tal que la función objetivo $L$ se reduzca lo más posible, pero tampoco se quiere desperdiciar mucho tiempo escogiendo el valor. La mejor opción es el minimizador global de la función $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, pero es muy caro de calcular. Generalmente se utilizan heurísticas que consisten en elegir una sucesión de valores para $\alpha_k$ y probar cuál de todos satisface ciertas condiciones.
+In numerical optimisation, we make use of the sufficient second order conditions. Suppose that the Hessian matrix $\nabla^2 L$ is continuous in an open neighbourhood of $\theta^*$, that the gradient $\nabla L(\theta^*) = 0$ and that $\nabla^2 L(\theta^*)$ is positive definite; then $\theta^*$ is a local minimiser of $L$.
 
-Una de estas condiciones es llamada la condición de Armijo, y estipula que $\alpha_k$ debe generar un descenso suficiente en la función objetivo $L$, medido como
+This is basic calculus, but it provides the base of numerical optimisation algorithms. In general, all algorithms search for a point $\theta^*$ such that $\nabla L(\theta^*) = 0$. 
 
-$$
-  L(\theta_k + \alpha_k p_k) \leq L(\theta_k) + c_1 \alpha_k \nabla L(\theta_k)^T p_k,
-$$
 
-para alguna constante $c_1 \in (0, 1)$. Usualmente $c_1$ es pequeño, como $10^{-4}$. Esta condición puede no ser suficiente, pues valores muy pequeños de $\alpha_k$ pueden hacer que se cumpla, y longitudes de paso muy pequeñas no son deseables. Una forma de arreglar esto es usar backtracking en el algoritmo. Este consiste en elegir un valor relativamente grande de $\alpha_k$ (algunos métodos inician con $\alpha_k = 1$), y se inicia un subalgoritmo iterativo el cual reduce el valor de $\alpha_k$ hasta que se cumple la condición de Armijo.
 
-Hay muchas otras formas de escoger la longitud de paso $\alpha_k$, las cuales van más allá del objetivo de este trabajo. Si se quisiera estudiar más a fondo este tema, se puede consultar el Nocedal  para más detalles.
+#Gradient descent
 
-Para explicar un poco mejor el concepto de descenso en gradiente, se presentan dos ejemplos, uno para regresión lineal y otro para regresión logística. Ambos ejemplos fueron implementados en el lenguaje para cómputo estadístico R.
+Gradient descent is an algorithm that belongs to a family called *line search algorithms*. In each iteration, thee algorithms search for a direction in which to go and then update the current value in accordance to that direction. That is, in the $k$-th iteration, we have a value $\theta_k$, and we look for a direction $p_k$ to update to a new value $\theta_{k+1} = \theta_k + \alpha_k p_k$, where $\alpha_k > 0$ is the 'distance' that the algorithm moves toward direction $p_k$, and is called *step length*. Once that the value of the parameter is updated, we find a new direction in which to move forward and then update the parameter value again. This is done until a stopping criteria is met, this usually being that the gradient vector norm is smaller than a certain small positive scalar.
 
-%%%%%%%%%%%%%%%%
-%%% Reg lineal
-%%%%%%%%%%%%%%%%
-
-En el caso de regresión lineal, en el caso general, se busca minimizar la función de pérdida cuadrática
+In gradient descent, the direction $p_k$ in which the algorithm moves is the maximum descent direction, that is, the negative of the gradient $-\nabla L(\theta_k)$. So, in each iteration we have
 
 \begin{equation}
-  \label{eq:perd_cuadratica_reg_lineal}
-  L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right)^2
+\label{eq:iteracion_descenso_grad}
+\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
 \end{equation}
 
-Tomando las derivadas parciales de \ref{eq:perd_cuadratica_reg_lineal}, se tiene que para cada $j \in \left\{1, \hdots, p \right\}$
+We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the globa minimiser of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
+
+One of those conditions is called Armijo conditions, and finds the $\alpha_k$ that allows a sufficient descent in the function $L$, measured as
+
+$$
+L(\theta_k + \alpha_k p_k) \leq L(\theta_k) + c_1 \alpha_k \nabla L(\theta_k)^T p_k,
+$$
+
+for a constant $c_1 \in (0, 1)$. Usually $c_1$ is small, such as $10^{-4}$. This condition may not be enough, because for very small values of $\alpha_k$ the condition may be met, and we don't usually want very small step lengths. Some ways to fix this is to backtrack. This consists of choosing a big value of $\alpha_k$ (such as $\alpha_k = 1$), and then an iterative subalgorithm is initiated which decreases the value of $\alpha_k$ until de Armijo condition is met.
+
+There are some other ways to choose step length $\alpha_k$, but those are beyond the scope of this post. Nocedal & Wright's book has a lot more information about it.
+
+### Examples: 
+
+Now that we've covered some theory, to explain further the concept of gradient descent, we work with two examples: linear regression and logistic regression.
+
+##### **Linear regression**
+
+In linear regression we want to minimise the quadratic loss function
 
 \begin{equation}
-  \frac{\partial L}{\partial \beta_j} = 
-    -\frac{2}{n} \sum_{i = 1}^n \left( x_{ij} \ell_i(x, \beta) \right)
+L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2.
 \end{equation}
 
-donde $x_{i1} = 1$ para toda $i \in \left\{1, \hdots, n \right\}$ y
+Taking its partial derivatives, we have for each $j \in \left\{1, ..., p \right\}$
 
 \begin{equation}
-  \label{eq:ele_i_reg_lineal}
-  \ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right).
+\frac{\partial L}{\partial \beta_j} = 
+-\frac{2}{n} \sum_{i = 1}^n \left( x_{ij} \ell_i(x, \beta) \right)
 \end{equation}
 
-De aquí, se llega a que la dirección de descenso en gradiente en cada iteración es
+where $x_{i1} = 1$ for each $i \in \left\{1, ..., n \right\}$ and
+
+\begin{equation}
+\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
+\end{equation}
+
+From here, we have that the gradient descent direction for each iteration is
 
 $$
-  \nabla_{\beta} L(x, \beta) = \left( \frac{\partial L}{\partial \beta_0}, \hdots, \frac{\partial L}{\partial \beta_p} \right)^T.
+\nabla_{\beta} L(x, \beta) = \left( \frac{\partial L}{\partial \beta_0}, ..., \frac{\partial L}{\partial \beta_p} \right)^T.
 $$
 
-En el ejemplo implementado, se generó un vector $x \in \mathbb{R}^n$ con $n = 1000$ tal que $x_i \sim N(0, 1)$ para cada $i \in \left\{1, \hdots, n \right\}$ y se construyó la variable respuesta $y = \beta_0 + \beta_1x + \varepsilon$ con $\varepsilon \sim N(0, 1)$, $\beta_0 = 2$ y $\beta_1 = 1$. Los datos generados se pueden ver en la figura EJEMPLO DE RE LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.
+In the implemented example, I generated a vector $x \in \mathbb{R}^n$ with $n = 1000$ such that $x_i \sim N(0, 1)$ for each $i \in \left\{1, ..., n \right\}$ and the response variable was $y = \beta_0 + \beta_1x + \varepsilon$ with $\varepsilon \sim N(0, 1)$, $\beta_0 = 2$ and $\beta_1 = 1$. We can see the code used and the generated data in the following image.
 
-Entonces, para minimizar la pérdida cuadrática \ref{eq:perd_cuadratica_reg_lineal}, se empieza con un vector $\beta^0 \in \mathbb{R}^2$, y en cada iteración, se actualiza 
+```{r, message = FALSE}
+library(tidyverse)
+
+theme_set(theme_bw())
+
+
+N <- 1000
+beta_0 <- 2
+beta_1 <- 1
+
+set.seed(20170909)
+data <- tibble(x = rnorm(N),
+               y = beta_0 + beta_1*x + rnorm(N))
+
+model <- lm(y~x, data = data)
+
+
+(data %>% 
+    ggplot(aes(x, y)) +
+    geom_point(size = 0.7, alpha = 0.6) +
+    geom_abline(slope = beta_1, intercept = beta_0)
+) 
+```
+
+So, to minimise the quadratic loss function, we start with a vector $\beta^0 \in \mathbb{R}^2$, and in each iteration we update as
 
 $$
-  \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
+\beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
 $$
 
-hasta un criterio de paro. En este caso, el criterio de paro era que la norma del gradiente $\nabla_{\beta} L(x, \beta)$ fuera menor a $0.000001$ o que se excediera de 100 iteraciones. El vector de parámetros inicial fue $\beta^0 = (0, 0)^T$, y el valor de $\alpha_k$ fue $0.1$ para toda $k$ sin tomar en cuenta la condición de Armijo.
+until we meet a stopping criteria. In this case, the stopping criteria was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was smaller than $0.000001$ or that it exceeded 100 iterations. The vector of initial parameters was $\beta^0 = (0, 0)^T$, and a fixed $\alpha_k$ of $0.1$ for all $k$ without taking into account the Armijo contition.
 
-Los valores del vector de parámetros en cada iteración se pueden ver en la figura
+The gradient was implemented in R as a function as follows. It receives a dataframe and a vector of parameters, and returns a vector of directions.
 
-ITERACIONES GD REG LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```{r}
+gradient <- function(data, betas){
+  n <- nrow(data)
+  const <- rep(1, nrow(data))
+  li <- data$y - betas[1]*const - betas[2]*data$x
+  g1 <- -2*sum(li)/n
+  g2 <- -2*sum(li*data$x)/n
+  return(c(g1, g2))
+}
+```
+
+We call the function and store the values of the parameters and descent directions in a dataframe.
+
+```{r}
+max_it <- 100
+data_gradient_descent <- tibble(it = 1:max_it,
+                                beta_0 = rep(0, max_it),
+                                beta_1 = rep(0, max_it),
+                                gradient_norm = rep(0, max_it))
+
+i = 0
+betas <- c(0, 0)
+alpha = 0.1
+while(i < max_it){
+  i = i + 1
+  g <- gradient(data, betas)
+  g_norm <- sqrt(sum(g^2))
+  g_unit <- g/g_norm
+  data_gradient_descent$beta_0[i] <- betas[1]
+  data_gradient_descent$beta_1[i] <- betas[2]
+  data_gradient_descent$gradient_norm[i] <- g_norm
+  if(g_norm < 0.000001) break
+  betas <- betas - alpha*g
+}
 
 
-El punto grande que se ve en la figura es el valor real de los parámetros (i.e. 2 y 1), y el tache que se ve es el valor obtenido utilizando el paquete lm de R. Se puede ver que el algoritmo implementado converge a estos valores. De hecho, el valor obtenido con el método implementado es exactamente igual al que regresa lm.
+data_gradient_descent <- data_gradient_descent[1:i,]
+```
 
 
+We can see the values of the parameter vector in each iteration in the following image. The big dot is the real value of the parameters (2 and 1) and the x is the value that I get using the lm package in R. We can see that the implemented algorithm converges to these values. In fact, the value we get is exactly the same as the one lm gets.
+
+```{r, warning=FALSE}
+data_gradient_descent %>% 
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_segment(
+    aes(
+      xend = c(tail(beta_0, n = -1), NA),
+      yend = c(tail(beta_1, n = -1), NA)
+    ),
+    size = 0.4,
+    color = '#919191',
+    arrow = arrow(length = unit(0.18, "cm"))
+  ) +
+  geom_point(size = 0.4, color = 'black') +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5) +
+  theme(
+    panel.grid.minor = element_blank()
+  )
+```
+
+And here we can see the norm of the gradient vector in each iteration. We can see that it keeps decreasing.
+
+```{r}
 
 
-%%%%%%%%%%%%%%%%
-%%% Reg logística
-%%%%%%%%%%%%%%%%
+data_gradient_descent %>% 
+  ggplot(aes(it, gradient_norm)) +
+  geom_point(size = 0.7) +
+  geom_line(size = 0.4)
+```
+
+
+##### **Logistic regression**
 
 En el caso de regresión logística, en el caso general, se busca minimizar la función de pérdida llamada devianza, definida como
 
 \begin{equation}
-  \label{eq:devianza_reg_log}
-  L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
-     - \frac{2}{n} \sum_{i=1}^{n}{\ell_i(\beta)}
+\label{eq:devianza_reg_log}
+L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
+- \frac{2}{n} \sum_{i=1}^{n}{\ell_i(\beta)}
 \end{equation}
 
 donde 
 $$
-  \beta^T x_i = \sum_{j=0}^{p}{\beta_j x_{ij}},
+\beta^T x_i = \sum_{j=0}^{p}{\beta_j x_{ij}},
 $$ 
 
 $$
-  h(w) = \frac{e^w}{1+e^w}
+h(w) = \frac{e^w}{1+e^w}
 $$ 
 
 y 
@@ -118,39 +228,39 @@ $$
 Se tiene que 
 
 $$
-  \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { \frac{\partial \ell_i}{\partial \beta_j} }
+\frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { \frac{\partial \ell_i}{\partial \beta_j} }
 $$
 
 y además, usando el hecho de que $h'(w) = h(w)(1-h(w))$, se tiene
 
 \begin{equation}
-  \label{eq:derivacion_ell_i_reg_log}
-  \begin{split}
-    \frac{\partial \ell_i}{\partial \beta_j} & = 
-      \frac{y_i h'(\beta^T x_i) x_{ij} }  {h(\beta^T x_i)} + \frac{(1 - y_i) (-1) h'(\beta^T x_i) x_{ij}} {1 - h(\beta^T x_i)} \\
-      & = \frac{h'(\beta^T x_i) x_{ij} y_i}{h(\beta^T x_i)} - \frac{(1 - y_i) h'(\beta^T x_i) x_{ij}}{1 - h((\beta^T x_i))} \\
-      & = h'(\beta^T x_i) x_{ij} \left(\frac{y_i}{h(\beta^T x_i)} - \frac{1-y_i}{1-h(\beta^T x_i)} \right) \\
-      & = h'(\beta^T x_i) x_{ij} \left(\frac{y_i - y_i h(\beta^T x_i) - 
-          h(\beta^T x_i) + y_i h(\beta^T x_i)}{h(\beta^T x_i)(1-h(\beta^T x_i))} \right) \\
-      & = x_{ij}(y_i - h(\beta^T x_i)).
-  \end{split}
+\label{eq:derivacion_ell_i_reg_log}
+\begin{split}
+\frac{\partial \ell_i}{\partial \beta_j} & = 
+\frac{y_i h'(\beta^T x_i) x_{ij} }  {h(\beta^T x_i)} + \frac{(1 - y_i) (-1) h'(\beta^T x_i) x_{ij}} {1 - h(\beta^T x_i)} \\
+& = \frac{h'(\beta^T x_i) x_{ij} y_i}{h(\beta^T x_i)} - \frac{(1 - y_i) h'(\beta^T x_i) x_{ij}}{1 - h((\beta^T x_i))} \\
+& = h'(\beta^T x_i) x_{ij} \left(\frac{y_i}{h(\beta^T x_i)} - \frac{1-y_i}{1-h(\beta^T x_i)} \right) \\
+& = h'(\beta^T x_i) x_{ij} \left(\frac{y_i - y_i h(\beta^T x_i) - 
+h(\beta^T x_i) + y_i h(\beta^T x_i)}{h(\beta^T x_i)(1-h(\beta^T x_i))} \right) \\
+& = x_{ij}(y_i - h(\beta^T x_i)).
+\end{split}
 \end{equation}
 
 Por lo tanto, se tiene que 
 
 $$
-  \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { x_{ij}(y_i - h(\sum_{j=0}^{p}{\beta_j x_{ij}})) },
+\frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { x_{ij}(y_i - h(\sum_{j=0}^{p}{\beta_j x_{ij}})) },
 $$
 
-donde nuevamente $x_{i1} = 1$ para toda $i \in \left\{1, \hdots, n \right\}$.
+donde nuevamente $x_{i1} = 1$ para toda $i \in \left\{1, ..., n \right\}$.
 
 
-En el ejemplo implementado, se generó un vector $x \in \mathbb{R}^n$ con $n = 1000$ tal que $x_i \sim N(0, 1)$ para cada $i \in \left\{1, \hdots, n \right\}$ y se construyó la variable auxiliar $p_i = \frac{1}{\exp \left( - \beta_0 - \beta_1 x_i \right)}$ con $\beta_0 = 1$ y $\beta_1 = 4$. Finalmente, la variable respuesta $y$ se construyó simulando una variables aleatorias Bernoulli, de tal forma que $y_i \sim Bern(p_i)$. Los datos generados se pueden ver en la figura EJEMPLO DE REGRESIÓN LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.
+En el ejemplo implementado, se generó un vector $x \in \mathbb{R}^n$ con $n = 1000$ tal que $x_i \sim N(0, 1)$ para cada $i \in \left\{1, ..., n \right\}$ y se construyó la variable auxiliar $p_i = \frac{1}{\exp \left( - \beta_0 - \beta_1 x_i \right)}$ con $\beta_0 = 1$ y $\beta_1 = 4$. Finalmente, la variable respuesta $y$ se construyó simulando una variables aleatorias Bernoulli, de tal forma que $y_i \sim Bern(p_i)$. Los datos generados se pueden ver en la figura EJEMPLO DE REGRESIÓN LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.
 
 Entonces, para minimizar la devianza \ref{eq:devianza_reg_log}, exactamente igual que en el otro caso, se empieza con un vector $\beta^0 \in \mathbb{R}^2$, y en cada iteración, se actualiza 
 
 $$
-  \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
+\beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
 $$
 
 hasta un criterio de paro. En este caso, el criterio de paro fue un poco más estricto: la norma del gradiente $\nabla_{\beta} L(x, \beta)$ debía ser menor a $0.0001$, o el cociente de normas entre cada iteración fuera mayor a $0.8$, o que se excediera de 500 iteraciones. El vector de parámetros inicial fue $\beta^0 = (-10, 10)^T$. En este caso se hizo backtracking con un valor inicial $\alpha_0 = 3$.
@@ -176,24 +286,24 @@ El punto grande que se ve en la figura es el valor real de los parámetros (i.e.
 En el aprendizaje estadístico es muy común encontrar problemas de optimización de la forma
 
 \begin{equation}
-  \label{eq:perd_gral_apr_est}
-  \min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{donde} \, \, 
-    L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+\label{eq:perd_gral_apr_est}
+\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{donde} \, \, 
+L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
 \end{equation}
 
 En los ejemplos de la subsección \ref{sec:descenso_gradiente} se puede ver esto con claridad: las funciones de pérdida a minimizar son de la forma \ref{eq:perd_gral_apr_est}. El método de descenso en gradiente presentado en \ref{sec:descenso_gradiente} utiliza iteraciones de la forma de la ecuación \ref{eq:iteracion_descenso_grad}, es decir, 
 
 \[
-  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
+\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
 \]
 
 lo cual involucra la evaluación de $n$ gradientes para después promediarlos. En los casos de aprendizaje automático de gran escala, el número de observaciones $n$ es grande, por lo que calcular estos gradientes puede resultar costoso. Debido a esto, surgen los métodos como descenso en gradiente estocástico, en los cuales el número de gradientes a evaluar no depende de $n$, sino que es constante. Este método utiliza iteraciones de la forma
 
 \[
-  \theta_{k+1} = \theta_k - \frac{\alpha_k}{n} \nabla \psi_{i_k}(\theta_k),
+\theta_{k+1} = \theta_k - \frac{\alpha_k}{n} \nabla \psi_{i_k}(\theta_k),
 \]
 
-donde $i_k \in \left\{1, 2, \hdots, n \right\}$ es escogido aleatoriamente. El gradiente $\nabla \psi_{i_k}(\theta_k)$ es un estimador insesgado de $\nabla L(\theta_k)$. De esta forma, cada iteración es muy barata pues involucra la evaluación de solamente un gradiente. Puede suceder que alguna $\nabla \psi_{i_k}(\theta_k)$ particular no otorgue una dirección de descenso partiendo de $\theta_k$, pero, intuitivamente, en promedio sí se dan direcciones de descenso, de tal forma que le sucesión $\left\{ \theta_0, \theta_1, \hdots \right\}$ puede ser guiada a un minimizador $\theta^*$.
+donde $i_k \in \left\{1, 2, ..., n \right\}$ es escogido aleatoriamente. El gradiente $\nabla \psi_{i_k}(\theta_k)$ es un estimador insesgado de $\nabla L(\theta_k)$. De esta forma, cada iteración es muy barata pues involucra la evaluación de solamente un gradiente. Puede suceder que alguna $\nabla \psi_{i_k}(\theta_k)$ particular no otorgue una dirección de descenso partiendo de $\theta_k$, pero, intuitivamente, en promedio sí se dan direcciones de descenso, de tal forma que le sucesión $\left\{ \theta_0, \theta_1, ... \right\}$ puede ser guiada a un minimizador $\theta^*$.
 
 Para ilustrar este método, se implementaron los dos mismos ejemplos que en la sección anterior, es decir, la regresión lineal y la regresión logística.
 
@@ -205,20 +315,20 @@ Para ilustrar este método, se implementaron los dos mismos ejemplos que en la s
 En el caso de la regresión lineal, se desea minimizar la pérdida cuadrática definida en la ecuación \ref{eq:perd_cuadratica_reg_lineal}. Aquí, si se utiliza la notación utilizada en la ecuación \ref{eq:perd_gral_apr_est}, cada $\psi_i(x, \theta)$ es 
 
 $$
-  \psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - \hdots  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
+\psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
 $$ 
 
-con $\ell_i(x, \beta)$ definido en la ecuación \ref{eq:ele_i_reg_lineal}. Se puede ver que la derivada parcial de $\psi_i(x, \beta)$ respecto a cada $\beta_j$ con $j \in \left\{ 0, \hdots, p \right\}$ es
+con $\ell_i(x, \beta)$ definido en la ecuación \ref{eq:ele_i_reg_lineal}. Se puede ver que la derivada parcial de $\psi_i(x, \beta)$ respecto a cada $\beta_j$ con $j \in \left\{ 0, ..., p \right\}$ es
 
 \[
-  \frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
+\frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
 \]
 
 por lo que la dirección de avance en cada iteración del algoritmo es
 
 \[
-  \nabla_{\beta} \psi_i(x, \beta) = 
-    \left( \frac{\partial \psi_i}{\partial \beta_0}, \hdots, \frac{\partial \psi_i}{\partial \beta_p} \right).
+\nabla_{\beta} \psi_i(x, \beta) = 
+\left( \frac{\partial \psi_i}{\partial \beta_0}, ..., \frac{\partial \psi_i}{\partial \beta_p} \right).
 \]
 
 Nuevamente, el vector de parámetros iniciales fue $\beta^0 = (0, 0)^T$.  El criterio de paro era que la norma del gradiente $\nabla_{\beta} L(x, \beta)$ fuera menor a $0.000001$, que se excediera de 300 iteraciones o que la norma dos al cuadrado de las diferencias del vector de parámetros entre una iteración y otra (i.e. $\norm{\beta^{k+1} - \beta^k}^2_2$) fuera menor a $10^{-15}$. 
@@ -241,13 +351,13 @@ En ambas figuras se muestra un punto grande que representa el valor real de los 
 Para la regresión logística ya se tienen hechos casi todos los cálculos necesarios en la subsección \ref{sec:descenso_gradiente}. Con la notación utilizada en la ecuación \ref{eq:perd_gral_apr_est}, cada $\psi_i(x, \theta)$ es 
 
 $$
-  \psi_i(x, \theta) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) = \ell_i(x, \beta).
+\psi_i(x, \theta) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) = \ell_i(x, \beta).
 $$ 
 
 Además, en las ecuaciones \ref{eq:derivacion_ell_i_reg_log} se llega a que
 
 \[
-  \frac{\partial \ell_i}{\partial \beta_j} = \frac{\partial \psi_i}{\partial \beta_j} = x_{ij}(y_i - h(\beta^T x_i)).
+\frac{\partial \ell_i}{\partial \beta_j} = \frac{\partial \psi_i}{\partial \beta_j} = x_{ij}(y_i - h(\beta^T x_i)).
 \]
 
 Por lo que ya se tiene todo lo necesario. En la implementación, el criterio de paro fue el mismo que en descenso en gradiente estocástico para regresión lineal: que la norma del gradiente $\nabla_{\beta} L(x, \beta)$ fuera menor a $0.000001$, que se excediera de 300 iteraciones o que la norma dos al cuadrado de las diferencias del vector de parámetros entre una iteración y otra fuera menor a $10^{-15}$. 
@@ -285,79 +395,6 @@ Los valores del vector de parámetros en cada iteración se pueden ver en las fi
 # Gradient descent
 
 ```{r, eval=FALSE}
-library(tidyverse)
-
-theme_set(theme_bw())
-
-###################################
-###################################
-### Linear Regression
-###################################
-###################################
-
-N <- 1000
-beta_0 <- 2
-beta_1 <- 1
-
-set.seed(20170909)
-data <- tibble(x = rnorm(N),
-               y = beta_0 + beta_1*x + rnorm(N))
-
-modelo <- lm(y~x, data = data)
-
-
-(data %>% 
-  ggplot(aes(x, y)) +
-  geom_point(size = 0.7, alpha = 0.6) +
-  geom_abline(slope = beta_1, intercept = beta_0)
-) 
-
-gradient <- function(data, betas){
-  n <- nrow(data)
-  const <- rep(1, nrow(data))
-  li <- data$y - betas[1]*const - betas[2]*data$x
-  g1 <- -2*sum(li)/n
-  g2 <- -2*sum(li*data$x)/n
-  return(c(g1, g2))
-}
-
-
-max_it <- 100
-data_gradient_descent <- tibble(it = 1:max_it,
-                                beta_0 = rep(0, max_it),
-                                beta_1 = rep(0, max_it),
-                                gradient_norm = rep(0, max_it))
-
-i = 0
-betas <- c(0, 0)
-alpha = 0.1
-while(i < max_it){
-  i = i + 1
-  g <- gradient(data, betas)
-  g_norm <- sqrt(sum(g^2))
-  g_unit <- g/g_norm
-  cat("It: ", i, 
-      "\n\tbeta_0: ", betas[1], 
-      "\n\tbeta_1: ", betas[2],
-      "\n\tgradient_norm: ", g_norm, 
-      "\n\tDirection: ", g_unit[1], g_unit[2],
-      "\n\n")
-  data_gradient_descent$beta_0[i] <- betas[1]
-  data_gradient_descent$beta_1[i] <- betas[2]
-  data_gradient_descent$gradient_norm[i] <- g_norm
-  if(g_norm < 0.000001) break
-  betas <- betas - alpha*g
-}
-
-
-data_gradient_descent <- data_gradient_descent[1:i,]
-
-data_gradient_descent %>% 
-  ggplot(aes(it, gradient_norm)) +
-  geom_point(size = 0.7) +
-  geom_line(size = 0.4)
-
-
 
 # data_gradient_descent %>% 
 #   ggplot(aes(beta_0, beta_1)) +
@@ -365,34 +402,7 @@ data_gradient_descent %>%
 #   geom_point(size = 0.7, alpha = 0.4)
 
 
-(data_gradient_descent %>% 
-  ggplot(aes(beta_0, beta_1)) +
-  xlab("Beta 0") +
-  ylab("Beta 1") +
-  geom_segment(
-    aes(
-      xend = c(tail(beta_0, n = -1), NA),
-      yend = c(tail(beta_1, n = -1), NA)
-    ),
-    size = 0.4,
-    color = '#919191',
-    arrow = arrow(length = unit(0.18, "cm"))
-    ) +
-  #geom_path(size = 0.6, color = 'red') +
-  geom_point(size = 0.4, color = 'black') +
-  geom_point(aes(x, y),
-             data = tibble(x = beta_0,
-                           y = beta_1)) +
-  geom_point(aes(x, y),
-             data = tibble(x = modelo$coefficients[1],
-                           y = modelo$coefficients[2]),
-             shape = 'x',
-             size = 5) +
-  theme(
-    #panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-) 
+
 
 
 
@@ -414,17 +424,17 @@ data <- tibble(x = rnorm(N),
                pr = 1/(1 + exp(-z)),
                y = rbinom(1000, 1, pr))
 
-modelo <- glm(y ~ x, data = data, family = "binomial")
+model <- glm(y ~ x, data = data, family = "binomial")
 
 
 (data %>% 
-  ggplot(aes(x, y)) +
-  geom_point(size = 0.5, alpha = 0.4) +
-  stat_smooth(method="glm", 
-              method.args = list(family = "binomial"), 
-              se = FALSE,
-              size = 0.6,
-              color = 'black')
+    ggplot(aes(x, y)) +
+    geom_point(size = 0.5, alpha = 0.4) +
+    stat_smooth(method="glm", 
+                method.args = list(family = "binomial"), 
+                se = FALSE,
+                size = 0.6,
+                color = 'black')
 ) %>% 
   ggsave(.,
          file = "../../out/optim/log_reg_example_1.pdf",
@@ -527,29 +537,29 @@ data_gradient_descent %>%
 
 
 (data_gradient_descent %>% 
-  #filter(it < 35) %>% 
-  ggplot(aes(beta_0, beta_1)) +
-  xlab("Beta 0") +
-  ylab("Beta 1") +
-  geom_segment(
-    aes(
-      xend = c(tail(beta_0, n = -1), NA),
-      yend = c(tail(beta_1, n = -1), NA)
-    ),
-    size = 0.4,
-    color = '#919191',
-    arrow = arrow(length = unit(0.18, "cm"))
-  ) +
-  geom_point(size = 0.4, color = 'black') +
-  geom_point(aes(x, y),
-             data = tibble(x = beta_0,
-                           y = beta_1)) +
-  geom_point(aes(x, y),
-             data = tibble(x = modelo$coefficients[1],
-                           y = modelo$coefficients[2]),
-             shape = 'x',
-             size = 5) +
-  theme(panel.grid.minor = element_blank())
+    #filter(it < 35) %>% 
+    ggplot(aes(beta_0, beta_1)) +
+    xlab("Beta 0") +
+    ylab("Beta 1") +
+    geom_segment(
+      aes(
+        xend = c(tail(beta_0, n = -1), NA),
+        yend = c(tail(beta_1, n = -1), NA)
+      ),
+      size = 0.4,
+      color = '#919191',
+      arrow = arrow(length = unit(0.18, "cm"))
+    ) +
+    geom_point(size = 0.4, color = 'black') +
+    geom_point(aes(x, y),
+               data = tibble(x = beta_0,
+                             y = beta_1)) +
+    geom_point(aes(x, y),
+               data = tibble(x = model$coefficients[1],
+                             y = model$coefficients[2]),
+               shape = 'x',
+               size = 5) +
+    theme(panel.grid.minor = element_blank())
 ) %>% 
   ggsave(.,
          file = "../../out/optim/log_reg_example_1_GD_iter.pdf",
@@ -586,7 +596,7 @@ set.seed(124362)
 data <- tibble(x = rnorm(N),
                y = beta_0 + beta_1*x + rnorm(N))
 
-modelo <- lm(y~x, data = data)
+model <- lm(y~x, data = data)
 
 
 
@@ -681,7 +691,7 @@ data_gradient_descent$it <- 1:nrow(data_gradient_descent)
 #   geom_line(size = 0.4)
 
 
-plot_gd_iter <- function(data_gradient_descent, modelo, beta_0, beta_1, denom = 0){
+plot_gd_iter <- function(data_gradient_descent, model, beta_0, beta_1, denom = 0){
   # N <- nrow(data_gradient_descent)
   
   if(denom > 0) {
@@ -710,8 +720,8 @@ plot_gd_iter <- function(data_gradient_descent, modelo, beta_0, beta_1, denom = 
                data = tibble(x = beta_0,
                              y = beta_1)) +
     geom_point(aes(x, y),
-               data = tibble(x = modelo$coefficients[1],
-                             y = modelo$coefficients[2]),
+               data = tibble(x = model$coefficients[1],
+                             y = model$coefficients[2]),
                shape = 'x',
                size = 5) +
     theme(
@@ -724,7 +734,7 @@ plot_gd_iter <- function(data_gradient_descent, modelo, beta_0, beta_1, denom = 
 
 
 # Plots only at the beginning of each epoch
-plot_gd_iter(data_gradient_descent, modelo, beta_0, beta_1, 1) %>% 
+plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1) %>% 
   ggsave(.,
          file = "../../out/optim/lin_reg_example_1_SGD_each_epoch.pdf",
          device = 'pdf',
@@ -742,8 +752,8 @@ plot_gd_iter(data_gradient_descent, modelo, beta_0, beta_1, 1) %>%
                data = tibble(x = beta_0,
                              y = beta_1)) +
     geom_point(aes(x, y),
-               data = tibble(x = modelo$coefficients[1],
-                             y = modelo$coefficients[2]),
+               data = tibble(x = model$coefficients[1],
+                             y = model$coefficients[2]),
                shape = 'x',
                size = 5) +
     theme(
@@ -774,13 +784,13 @@ data <- tibble(x = rnorm(N),
                pr = 1/(1 + exp(-z)),
                y = rbinom(1000, 1, pr))
 
-modelo <- glm(y ~ x, data = data, family = "binomial")
+model <- glm(y ~ x, data = data, family = "binomial")
 
 
 h <- function(x){
   return(1/(1 + exp(-x)))
 }
- 
+
 # gradient <- function(data, betas){
 #   n <- nrow(data)
 #   const <- rep(1, nrow(data))
@@ -828,7 +838,7 @@ data_gradient_descent <- data_gradient_descent[1:(i*n),]
 data_gradient_descent$it <- 1:nrow(data_gradient_descent)
 
 # Plots only at the beginning of each epoch
-plot_gd_iter(data_gradient_descent, modelo, beta_0, beta_1, 1) %>% 
+plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1) %>% 
   ggsave(.,
          file = "../../out/optim/log_reg_example_1_SGD_each_epoch.pdf",
          device = 'pdf',
@@ -845,8 +855,8 @@ plot_gd_iter(data_gradient_descent, modelo, beta_0, beta_1, 1) %>%
                data = tibble(x = beta_0,
                              y = beta_1)) +
     geom_point(aes(x, y),
-               data = tibble(x = modelo$coefficients[1],
-                             y = modelo$coefficients[2]),
+               data = tibble(x = model$coefficients[1],
+                             y = model$coefficients[2]),
                shape = 'x',
                size = 5) +
     theme(
