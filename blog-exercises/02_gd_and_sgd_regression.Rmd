@@ -66,14 +66,14 @@ L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} -
 Taking its partial derivatives, we have for each $j \in \left\{1, ..., p \right\}$
 
 $$
-  \frac{\partial L}{\partial \beta_j} = 
+\frac{\partial L}{\partial \beta_j} = 
 -\frac{2}{n} \sum_{i = 1}^n \left( x_{ij} \ell_i(x, \beta) \right)
 $$
 
 where $x_{i1} = 1$ for each $i \in \left\{1, ..., n \right\}$ and
 
 $$
-  \ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
+\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
 $$
 
 From here, we have that the gradient descent direction for each iteration is
@@ -208,7 +208,7 @@ rm(list = ls())
 In the case of logistic regression, we want to minimise a loss function called deviance that is defined as
 
 $$
-  L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
+L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
 - \frac{2}{n} \sum_{i=1}^{n}{\ell_i(\beta)}
 $$
 
@@ -437,20 +437,20 @@ rm(list = ls())
 In statistical learning it is common to find the need to solve optimisation problems of the form
 
 \begin{equation}
-  \min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
-  L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
+L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
 \end{equation}
 
 In both past examples, the loss functions that we wanted to minimise were expressed in that way. Gradient descent uses iterations in the form
 
 \[
-  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
+\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
 \]
 
 which involves evaluating $n$ gradients and then taking an average. In the cases of big scale machine learning, the number of observations $n$ is really big, so computing all of those gradients in each iteration is expensive. That's why methods such as SGD come up, methods where the number of gradients to compute doesn't depend on $n$, it is constant. SGD uses iterations of the form
 
 \[
-  \theta_{k+1} = \theta_k - \alpha_k \nabla \psi_{i_k}(\theta_k),
+\theta_{k+1} = \theta_k - \alpha_k \nabla \psi_{i_k}(\theta_k),
 \]
 
 where $i_k \in \left\{1, 2, ..., n \right\}$ is randomly chosen. The gradient $\nabla \psi_{i_k}(\theta_k)$ is an unbiased estimator of $\nabla L(\theta_k)$. This way, each iteration is really cheap because it involves the computation of only one gradient. It can happen that some $\nabla \psi_{i_k}(\theta_k)$ in particular doesn't give a direction of descent from $\theta_k$, but on average we do get descent directions, such that the sequence $\left\{ \theta_0, \theta_1, ... \right\}$ can be guided to a minimiser $\theta^*$.
@@ -483,19 +483,19 @@ $$
 with $\ell_i(x, \beta)$ defined earlier as
 
 $$
-  \ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
+\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
 $$
 We can see that the partial derivative of $\psi_i(x, \beta)$ with respect to each $\beta_j$ with $j \in \left\{ 0, ..., p \right\}$ is
 
 \[
-  \frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
+\frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
 \]
 
 so, the direction of descent in each iteration is
 
 \[
-  \nabla_{\beta} \psi_i(x, \beta) = 
-  \left( \frac{\partial \psi_i}{\partial \beta_0}, ..., \frac{\partial \psi_i}{\partial \beta_p} \right).
+\nabla_{\beta} \psi_i(x, \beta) = 
+\left( \frac{\partial \psi_i}{\partial \beta_0}, ..., \frac{\partial \psi_i}{\partial \beta_p} \right).
 \]
 
 Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stopping rule was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was less than $0.000001$, or that there were more than 300 iterations or that the squared norm of the differences of the parameter vector from one iteration to the next (i.e. $||\beta^{k+1} - \beta^k||^2_2$) was less than $10^{-15}$. 
@@ -643,22 +643,22 @@ plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1)
 
 # Plots all iterations in all epochs
 data_gradient_descent %>% 
-    ggplot(aes(beta_0, beta_1)) +
-    xlab("Beta 0") +
-    ylab("Beta 1") +
-    geom_path(size = 0.1, color = 'black') +
-    geom_point(size = 0.01, color = 'black', alpha = 0.2) +
-    geom_point(aes(x, y),
-               data = tibble(x = beta_0,
-                             y = beta_1)) +
-    geom_point(aes(x, y),
-               data = tibble(x = model$coefficients[1],
-                             y = model$coefficients[2]),
-               shape = 'x',
-               size = 5) +
-    theme(
-      panel.grid.minor = element_blank()
-    )
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_path(size = 0.1, color = 'black') +
+  geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5) +
+  theme(
+    panel.grid.minor = element_blank()
+  )
 ```
 
 We can see that in the second figure that the directions go zig-zagging, but in the end reach the final solution. In GD the directions were more uniform.
@@ -667,26 +667,21 @@ In both figures there's once more the big dot that represents the real value of 
 
 ##### **Logistic regression**
 
-Para la regresión logística ya se tienen hechos casi todos los cálculos necesarios en la subsección \ref{sec:descenso_gradiente}. Con la notación utilizada en la ecuación \ref{eq:perd_gral_apr_est}, cada $\psi_i(x, \theta)$ es 
+For logistic regression, each $\psi_i(x, \theta)$ is
 
 $$
 \psi_i(x, \theta) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) = \ell_i(x, \beta).
 $$ 
 
-Además, en las ecuaciones \ref{eq:derivacion_ell_i_reg_log} se llega a que
+And we can get to the following result
 
 \[
 \frac{\partial \ell_i}{\partial \beta_j} = \frac{\partial \psi_i}{\partial \beta_j} = x_{ij}(y_i - h(\beta^T x_i)).
 \]
 
-Por lo que ya se tiene todo lo necesario. En la implementación, el criterio de paro fue el mismo que en descenso en gradiente estocástico para regresión lineal: que la norma del gradiente $\nabla_{\beta} L(x, \beta)$ fuera menor a $0.000001$, que se excediera de 300 iteraciones o que la norma dos al cuadrado de las diferencias del vector de parámetros entre una iteración y otra fuera menor a $10^{-15}$. 
+In the implementation, the stopping criteria was the same as in SGD for linear regression.
 
-Los valores del vector de parámetros en cada iteración se pueden ver en las figuras LALALALALAL y LALALALALAL. Las explicaciones de estas dos imágenes son análogas a las de regresión lineal. Nuevamente, el valor obtenido con el método implementado converge al valor real y al que se obtuvo con el paquete glm.
-
-
-```{r, eval = F}
-
-
+```{r, echo=FALSE, warning=FALSE}
 ###################################
 ###################################
 ### Logistic Regression
@@ -699,7 +694,6 @@ N <- 1000
 beta_0 <- 1
 beta_1 <- 4
 
-set.seed(124362)
 data <- tibble(x = rnorm(N),
                z = beta_0 + beta_1*x,
                pr = 1/(1 + exp(-z)),
@@ -711,18 +705,11 @@ model <- glm(y ~ x, data = data, family = "binomial")
 h <- function(x){
   return(1/(1 + exp(-x)))
 }
+```
 
-# gradient <- function(data, betas){
-#   n <- nrow(data)
-#   const <- rep(1, nrow(data))
-#   bx <- betas[1]*const + betas[2]*data$x
-#   li <- data$y - h(bx)
-#   g1 <- -2*sum(li)/n
-#   g2 <- -2*sum(li*data$x)/n
-#   return(c(g1, g2))
-# }
+This is the code used to compute the directions in which the algorithm moves.
 
-
+```{r}
 gradient_row <- function(data_row, betas){
   bx <- betas[1] + betas[2]*data_row$x
   li <- li <- data_row$y - h(bx)
@@ -730,8 +717,11 @@ gradient_row <- function(data_row, betas){
   g2 <- -2*li*data_row$x
   return(c(g1, g2))
 }
+```
 
+We start the algorithm.
 
+```{r SGD_log_reg, warning=FALSE, cache=TRUE}
 max_it <- 300
 n <- nrow(data)
 data_gradient_descent <- tibble(
@@ -746,7 +736,7 @@ betas <- c(-10, 10)
 alpha = 0.01
 while(i < max_it){
   i = i + 1
-  epoch_betas <- epoch_update(data, betas, alpha, i, verbose = 1)
+  epoch_betas <- epoch_update(data, betas, alpha, i, verbose = 0)
   betas_old <- betas
   betas <- epoch_betas$betas
   data_gradient_descent[((i-1)*n + 1):((i)*n),] <- epoch_betas$epoch_values
@@ -757,38 +747,33 @@ while(i < max_it){
 
 data_gradient_descent <- data_gradient_descent[1:(i*n),]
 data_gradient_descent$it <- 1:nrow(data_gradient_descent)
+```
+
+The following figures show the values of the parameters in each iteration. As before, the first figure shows only the beginning of each epoch and the second shows all iterations in all epochs. The values converge to the real values and the values that we get if we use the glm package.
+
+```{r, warning=FALSE}
 
 # Plots only at the beginning of each epoch
-plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1) %>% 
-  ggsave(.,
-         file = "../../out/optim/log_reg_example_1_SGD_each_epoch.pdf",
-         device = 'pdf',
-         width = 8,
-         height = 5)
+plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1)
 
 # Plots all iterations in all epochs
-(data_gradient_descent %>% 
-    ggplot(aes(beta_0, beta_1)) +
-    xlab("Beta 0") +
-    ylab("Beta 1") +
-    geom_point(size = 0.01, color = 'black', alpha = 0.2) +
-    geom_point(aes(x, y),
-               data = tibble(x = beta_0,
-                             y = beta_1)) +
-    geom_point(aes(x, y),
-               data = tibble(x = model$coefficients[1],
-                             y = model$coefficients[2]),
-               shape = 'x',
-               size = 5) +
-    theme(
-      panel.grid.minor = element_blank()
-    )
-) %>% 
-  ggsave(.,
-         file = "../../out/optim/log_reg_example_1_SGD_iter_all.pdf",
-         device = 'pdf',
-         width = 8,
-         height = 5)
+data_gradient_descent %>% 
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5) +
+  theme(
+    panel.grid.minor = element_blank()
+  )
 
 ```
 
+That's it. :D
