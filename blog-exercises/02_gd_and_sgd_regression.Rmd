@@ -1,7 +1,7 @@
 ---
 title: "GD and SGD for regression"
 author: "Mario Becerra"
-date: "September 9, 2017"
+date: "September 10, 2017"
 output: html_document
 ---
 
