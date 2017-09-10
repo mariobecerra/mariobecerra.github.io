@@ -9,9 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Loss function optimization
+# Loss function optimisation
 
-In statistical learning, one usually wants to find the parameters that minimise a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimization comes in. For this post, I use definitions from *Numerical Optimization* by Nocedal & Wright (2nd Ed) and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
+In statistical learning, one usually wants to find the parameters that minimise a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimisation comes in. For this post, I use definitions from *Numerical Optimization* (2nd Ed.) by Nocedal & Wright and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
 
 The general problem of unrestricted optimisation is
 
@@ -19,7 +19,7 @@ The general problem of unrestricted optimisation is
   \min_{\theta \in \mathbb{R}^p} L(\theta).
 \end{equation}
 
-For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimization algorithms are iterative. A solution is a vector $\theta^*$ called local minimiser, which makes the function $L$ to be minimised in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimiser if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
+For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimisation algorithms are iterative. A solution is a vector $\theta^*$ called local minimiser, which makes the function $L$ to be minimised in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimiser if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
 
 In numerical optimisation, we make use of the sufficient second order conditions. Suppose that the Hessian matrix $\nabla^2 L$ is continuous in an open neighbourhood of $\theta^*$, that the gradient $\nabla L(\theta^*) = 0$ and that $\nabla^2 L(\theta^*)$ is positive definite; then $\theta^*$ is a local minimiser of $L$.
 
@@ -37,7 +37,7 @@ In gradient descent, the direction $p_k$ in which the algorithm moves is the max
   \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
 \end{equation}
 
-We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the globa minimiser of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
+We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the global minimiser of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
 
 One of those conditions is called Armijo conditions, and finds the $\alpha_k$ that allows a sufficient descent in the function $L$, measured as
 
@@ -45,7 +45,7 @@ $$
 L(\theta_k + \alpha_k p_k) \leq L(\theta_k) + c_1 \alpha_k \nabla L(\theta_k)^T p_k,
 $$
 
-for a constant $c_1 \in (0, 1)$. Usually $c_1$ is small, such as $10^{-4}$. This condition may not be enough, because for very small values of $\alpha_k$ the condition may be met, and we don't usually want very small step lengths. Some ways to fix this is to backtrack. This consists of choosing a big value of $\alpha_k$ (such as $\alpha_k = 1$), and then an iterative subalgorithm is initiated which decreases the value of $\alpha_k$ until de Armijo condition is met.
+for a constant $c_1 \in (0, 1)$. Usually $c_1$ is small, such as $10^{-4}$. This condition may not be enough, because for very small values of $\alpha_k$ the condition may be met, and we don't usually want very small step lengths. Some ways to fix this is to backtrack. This consists of choosing a big value of $\alpha_k$ (such as $\alpha_k = 1$), and then an iterative sub-algorithm is initiated which decreases the value of $\alpha_k$ until de Armijo condition is met.
 
 There are some other ways to choose step length $\alpha_k$, but those are beyond the scope of this post. Nocedal & Wright's book has a lot more information about it.
 
@@ -112,7 +112,7 @@ $$
 \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
 $$
 
-until we meet a stopping criteria. In this case, the stopping criteria was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was smaller than $0.000001$ or that it exceeded 100 iterations. The vector of initial parameters was $\beta^0 = (0, 0)^T$, and a fixed $\alpha_k$ of $0.1$ for all $k$ without taking into account the Armijo contition.
+until we meet a stopping criteria. In this case, the stopping criteria was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was smaller than $0.000001$ or that it exceeded 100 iterations. The vector of initial parameters was $\beta^0 = (0, 0)^T$, and a fixed $\alpha_k$ of $0.1$ for all $k$ without taking into account the Armijo condition.
 
 The gradient was implemented in R as a function as follows. It receives a dataframe and a vector of parameters, and returns a vector of directions.
 
@@ -500,7 +500,7 @@ Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stop
 
 In SGD, an epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once.
 
-The following code shows the functions implemened to get SGD running.
+The following code shows the functions implemented to get SGD running.
 
 ```{r}
 # Gradient for an observation
@@ -659,7 +659,7 @@ data_gradient_descent %>%
   )
 ```
 
-We can see that in the second figure that the directions go zig-zagging, but in the end reach the final solution. In GD the directions were more uniform.
+We can see that in the second figure that the directions go zigzagging, but in the end reach the final solution. In GD the directions were more uniform.
 
 In both figures there's once more the big dot that represents the real value of the parameters ($\beta_0=2$ y $\beta_1 = 1$) and the x that represents the value from the lm package, but the second image isn't that clear because of all the noise in the directions.
 
