@@ -16,8 +16,7 @@ In statistical learning, one usually wants to find the parameters that minimise 
 The general problem of unrestricted optimisation is
 
 \begin{equation}
-\label{eq:prob_opt_gral}
-\min_{\theta \in \mathbb{R}^p} L(\theta).
+  \min_{\theta \in \mathbb{R}^p} L(\theta).
 \end{equation}
 
 For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimization algorithms are iterative. A solution is a vector $\theta^*$ called local minimiser, which makes the function $L$ to be minimised in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimiser if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
@@ -35,8 +34,7 @@ Gradient descent is an algorithm that belongs to a family called *line search al
 In gradient descent, the direction $p_k$ in which the algorithm moves is the maximum descent direction, that is, the negative of the gradient $-\nabla L(\theta_k)$. So, in each iteration we have
 
 \begin{equation}
-\label{eq:iteracion_descenso_grad}
-\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
+  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
 \end{equation}
 
 We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the globa minimiser of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
