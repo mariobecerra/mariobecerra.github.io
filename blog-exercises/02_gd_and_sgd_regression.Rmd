@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Loss function optimization
+# Loss function optimization
 
 In statistical learning, one usually wants to find the parameters that minimise a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimization comes in. For this post, I use definitions from *Numerical Optimization* by Nocedal & Wright (2nd Ed) and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
 
@@ -28,7 +28,7 @@ This is basic calculus, but it provides the base of numerical optimisation algor
 
 
 
-#Gradient descent
+# Gradient descent (GD)
 
 Gradient descent is an algorithm that belongs to a family called *line search algorithms*. In each iteration, thee algorithms search for a direction in which to go and then update the current value in accordance to that direction. That is, in the $k$-th iteration, we have a value $\theta_k$, and we look for a direction $p_k$ to update to a new value $\theta_{k+1} = \theta_k + \alpha_k p_k$, where $\alpha_k > 0$ is the 'distance' that the algorithm moves toward direction $p_k$, and is called *step length*. Once that the value of the parameter is updated, we find a new direction in which to move forward and then update the parameter value again. This is done until a stopping criteria is met, this usually being that the gradient vector norm is smaller than a certain small positive scalar.
 
@@ -191,26 +191,27 @@ data_gradient_descent %>%
 And here we can see the norm of the gradient vector in each iteration. We can see that it keeps decreasing.
 
 ```{r}
-
-
 data_gradient_descent %>% 
   ggplot(aes(it, gradient_norm)) +
   geom_point(size = 0.7) +
   geom_line(size = 0.4)
+
+# Delete all generated objects
+rm(list = ls()) 
 ```
 
 
 ##### **Logistic regression**
 
-En el caso de regresión logística, en el caso general, se busca minimizar la función de pérdida llamada devianza, definida como
+In the case of logistic regression, we want to minimise a loss function called deviance that is defined as
 
 \begin{equation}
-\label{eq:devianza_reg_log}
 L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
 - \frac{2}{n} \sum_{i=1}^{n}{\ell_i(\beta)}
 \end{equation}
 
-donde 
+where
+
 $$
 \beta^T x_i = \sum_{j=0}^{p}{\beta_j x_{ij}},
 $$ 
@@ -219,22 +220,21 @@ $$
 h(w) = \frac{e^w}{1+e^w}
 $$ 
 
-y 
+and 
 
 $$
 \ell_i(x) = y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)).
 $$
 
-Se tiene que 
+We get the partial derivatives
 
 $$
 \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { \frac{\partial \ell_i}{\partial \beta_j} }
 $$
 
-y además, usando el hecho de que $h'(w) = h(w)(1-h(w))$, se tiene
+and, using the fact that $h'(w) = h(w)(1-h(w))$, we get
 
 \begin{equation}
-\label{eq:derivacion_ell_i_reg_log}
 \begin{split}
 \frac{\partial \ell_i}{\partial \beta_j} & = 
 \frac{y_i h'(\beta^T x_i) x_{ij} }  {h(\beta^T x_i)} + \frac{(1 - y_i) (-1) h'(\beta^T x_i) x_{ij}} {1 - h(\beta^T x_i)} \\
@@ -246,49 +246,190 @@ h(\beta^T x_i) + y_i h(\beta^T x_i)}{h(\beta^T x_i)(1-h(\beta^T x_i))} \right) \
 \end{split}
 \end{equation}
 
-Por lo tanto, se tiene que 
+So, we have that
 
 $$
 \frac{\partial L}{\partial \beta_j} = -\frac{2}{n} \sum_{i = 1}^n { x_{ij}(y_i - h(\sum_{j=0}^{p}{\beta_j x_{ij}})) },
 $$
 
-donde nuevamente $x_{i1} = 1$ para toda $i \in \left\{1, ..., n \right\}$.
+where once more $x_{i1} = 1$ for all $i \in \left\{1, ..., n \right\}$.
 
 
-En el ejemplo implementado, se generó un vector $x \in \mathbb{R}^n$ con $n = 1000$ tal que $x_i \sim N(0, 1)$ para cada $i \in \left\{1, ..., n \right\}$ y se construyó la variable auxiliar $p_i = \frac{1}{\exp \left( - \beta_0 - \beta_1 x_i \right)}$ con $\beta_0 = 1$ y $\beta_1 = 4$. Finalmente, la variable respuesta $y$ se construyó simulando una variables aleatorias Bernoulli, de tal forma que $y_i \sim Bern(p_i)$. Los datos generados se pueden ver en la figura EJEMPLO DE REGRESIÓN LINEAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.
+We once again generate a vector $x \in \mathbb{R}^n$ with $n = 1000$ such that $x_i \sim N(0, 1)$ for each $i \in \left\{1, ..., n \right\}$ and then an auxiliary vector was computed, $p_i = \frac{1}{\exp \left( - \beta_0 - \beta_1 x_i \right)}$, with $\beta_0 = 1$ and $\beta_1 = 4$. Finally, the response variable $y$ was built simulating Bernoulli random variables, such that $y_i \sim Bern(p_i)$. The generated data can be seen in the following image.
 
-Entonces, para minimizar la devianza \ref{eq:devianza_reg_log}, exactamente igual que en el otro caso, se empieza con un vector $\beta^0 \in \mathbb{R}^2$, y en cada iteración, se actualiza 
+```{r}
+N <- 1000
+beta_0 <- 1
+beta_1 <- 4
+
+set.seed(124362)
+data <- tibble(x = rnorm(N),
+               z = beta_0 + beta_1*x,
+               pr = 1/(1 + exp(-z)),
+               y = rbinom(1000, 1, pr))
+
+model <- glm(y ~ x, data = data, family = "binomial")
+
+
+data %>% 
+  ggplot(aes(x, y)) +
+  geom_point(size = 0.5, alpha = 0.4) +
+  stat_smooth(method="glm", 
+              method.args = list(family = "binomial"), 
+              se = FALSE,
+              size = 0.6,
+              color = 'black')
+```
+
+
+To minimise the deviance, we do exactly as in the previous case: we start with an initial vector of parameters $\beta^0 \in \mathbb{R}^2$, and in each iteration we update
 
 $$
 \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
 $$
 
-hasta un criterio de paro. En este caso, el criterio de paro fue un poco más estricto: la norma del gradiente $\nabla_{\beta} L(x, \beta)$ debía ser menor a $0.0001$, o el cociente de normas entre cada iteración fuera mayor a $0.8$, o que se excediera de 500 iteraciones. El vector de parámetros inicial fue $\beta^0 = (-10, 10)^T$. En este caso se hizo backtracking con un valor inicial $\alpha_0 = 3$.
+until certain criteria is met. In this case, the stopping criteria was harder: the norm of the gradient $\nabla_{\beta} L(x, \beta)$ should be less than $0.0001$, or the ratio of norms between one iteration and the next had to be bigger than $0.8$, or to exceed 500 iterations. The vector of initial parameters was $\beta^0 = (-10, 10)^T$. We did backtracking with an initial $\alpha_0 = 3$.
 
-Los valores del vector de parámetros en cada iteración se pueden ver en la figura
+The backtracking function implemented is shown below.
 
-IMAGEN DE ITERACIONES!!!!!!!!!!!!!!!!!!!!
+```{r}
+backtrack <- function(betas, g, alpha, deviance, data, rho = 0.5, max_iter = 50, c1 = 10^-4){
+  funct_value <- do.call(deviance, list(betas, data))
+  norm_pk <- sum(g^2)
+  i = 0
+  while(i < max_iter){
+    i = i + 1
+    left <- do.call(deviance, list(betas - alpha*g, data))
+    right <- funct_value + c1*alpha*norm_pk
+    if(left <= right) break
+    alpha = alpha*rho
+  }
+  return(list(alpha = alpha,
+              iter = i))
+}
+```
+
+The auxiliary $h$ function, the gradient and the deviance are shown here.
+
+```{r}
+h <- function(x){
+  return(1/(1 + exp(-x)))
+}
+
+gradient <- function(data, betas){
+  n <- nrow(data)
+  const <- rep(1, nrow(data))
+  bx <- betas[1]*const + betas[2]*data$x
+  li <- data$y - h(bx)
+  g1 <- -2*sum(li)/n
+  g2 <- -2*sum(li*data$x)/n
+  return(c(g1, g2))
+}
 
 
-El punto grande que se ve en la figura es el valor real de los parámetros (i.e. 1 y 4), y el tache que se ve es el valor obtenido utilizando el paquete glm de R. Se puede ver que el algoritmo implementado converge a estos valores y, nuevamente, el valor obtenido con el método implementado es exactamente igual al que regresa el paquete utilizado (glm).
+deviance <- function(betas, data = data){
+  n <- nrow(data)
+  const <- rep(1, nrow(data))
+  bx <- betas[1]*const + betas[2]*data$x
+  hbx <- h(bx)
+  aux <- (1 - data$y)*log(1 - hbx)
+  aux2 <- ifelse(is.nan(aux), 0, aux)
+  li <- data$y*log(hbx) + aux2
+  d <- -2*sum(li)/n
+  return(d)
+}
+```
+
+We call the functions to start the algorithm and save the parameters of interest in a dataframe.
+
+```{r}
+max_it <- 1000
+data_gradient_descent <- tibble(it = 1:max_it,
+                                beta_0 = rep(0, max_it),
+                                beta_1 = rep(0, max_it),
+                                gradient_norm = rep(0, max_it),
+                                deviance = rep(0, max_it),
+                                alpha = rep(0, max_it))
+
+i = 0
+betas <- c(-10, 10) # reales 1 y 4
+g <- gradient(data, betas)
+g_norm <- sqrt(sum(g^2))
+while(i < max_it){
+  i = i + 1
+  g_norm_0 <- g_norm # old gradient norm
+  g <- gradient(data, betas)
+  g_norm <- sqrt(sum(g^2))
+  g_unit <- g/g_norm
+  data_gradient_descent$beta_0[i] <- betas[1]
+  data_gradient_descent$beta_1[i] <- betas[2]
+  data_gradient_descent$gradient_norm[i] <- g_norm
+  data_gradient_descent$deviance[i] <- deviance(betas, data)
+  if(g_norm < 0.0001 & g_norm/g_norm_0 > 0.8) break
+  backtrack_result <- backtrack(betas, g, 3, deviance, data)
+  alpha <- backtrack_result[[1]]
+  data_gradient_descent$alpha[i] <- alpha
+  betas <- betas - alpha*g
+}
 
 
+data_gradient_descent <- data_gradient_descent[1:i,]
+```
 
 
+We can see the values of the parameters in each iteration in the following image.
+
+```{r, warning=FALSE}
+data_gradient_descent %>% 
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_segment(
+    aes(
+      xend = c(tail(beta_0, n = -1), NA),
+      yend = c(tail(beta_1, n = -1), NA)
+    ),
+    size = 0.4,
+    color = '#919191',
+    arrow = arrow(length = unit(0.18, "cm"))
+  ) +
+  geom_point(size = 0.4, color = 'black') +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5) +
+  theme(panel.grid.minor = element_blank())
+```
+
+The big point is the real value of the parameters (1 and 4), and the x is the value that we get by using the glm package in R. The algorithm converges to that value, and once again the value that we get is exactly the same as in the glm package.
+
+The following images show the decreasing values of the gradient norm and the deviance with each iteration.
+
+```{r, warning=FALSE}
+
+data_gradient_descent %>% 
+  ggplot(aes(it, gradient_norm)) +
+  geom_point(size = 0.7) +
+  geom_line(size = 0.4)
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% SGD
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+data_gradient_descent %>% 
+  ggplot(aes(it, deviance)) +
+  geom_point(size = 0.7) +
+  geom_line(size = 0.4)
+```
 
-#Descenso en gradiente estocástico
+# Stochastic gradient descent (SGD)
 
-En el aprendizaje estadístico es muy común encontrar problemas de optimización de la forma
+In statistical learning it is common to find the need to solve optimisation problems of the form
 
 \begin{equation}
-\label{eq:perd_gral_apr_est}
-\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{donde} \, \, 
-L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+  \min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
+  L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
 \end{equation}
 
 En los ejemplos de la subsección \ref{sec:descenso_gradiente} se puede ver esto con claridad: las funciones de pérdida a minimizar son de la forma \ref{eq:perd_gral_apr_est}. El método de descenso en gradiente presentado en \ref{sec:descenso_gradiente} utiliza iteraciones de la forma de la ecuación \ref{eq:iteracion_descenso_grad}, es decir, 
@@ -308,9 +449,11 @@ donde $i_k \in \left\{1, 2, ..., n \right\}$ es escogido aleatoriamente. El grad
 Para ilustrar este método, se implementaron los dos mismos ejemplos que en la sección anterior, es decir, la regresión lineal y la regresión logística.
 
 
-%%%%%%%%%%%%%%%%
-%%% Reg lineal
-%%%%%%%%%%%%%%%%
+### Examples: 
+
+
+##### **Linear regression**
+
 
 En el caso de la regresión lineal, se desea minimizar la pérdida cuadrática definida en la ecuación \ref{eq:perd_cuadratica_reg_lineal}. Aquí, si se utiliza la notación utilizada en la ecuación \ref{eq:perd_gral_apr_est}, cada $\psi_i(x, \theta)$ es 
 
@@ -364,215 +507,6 @@ Por lo que ya se tiene todo lo necesario. En la implementación, el criterio de 
 
 Los valores del vector de parámetros en cada iteración se pueden ver en las figuras LALALALALAL y LALALALALAL. Las explicaciones de estas dos imágenes son análogas a las de regresión lineal. Nuevamente, el valor obtenido con el método implementado converge al valor real y al que se obtuvo con el paquete glm.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Gradient descent
-
-```{r, eval=FALSE}
-
-# data_gradient_descent %>% 
-#   ggplot(aes(beta_0, beta_1)) +
-#   geom_path(size = 0.3, color = 'red') +
-#   geom_point(size = 0.7, alpha = 0.4)
-
-
-
-
-
-
-###################################
-###################################
-### Logistic Regression
-###################################
-###################################
-
-rm(list = ls())
-
-N <- 1000
-beta_0 <- 1
-beta_1 <- 4
-
-set.seed(124362)
-data <- tibble(x = rnorm(N),
-               z = beta_0 + beta_1*x,
-               pr = 1/(1 + exp(-z)),
-               y = rbinom(1000, 1, pr))
-
-model <- glm(y ~ x, data = data, family = "binomial")
-
-
-(data %>% 
-    ggplot(aes(x, y)) +
-    geom_point(size = 0.5, alpha = 0.4) +
-    stat_smooth(method="glm", 
-                method.args = list(family = "binomial"), 
-                se = FALSE,
-                size = 0.6,
-                color = 'black')
-) %>% 
-  ggsave(.,
-         file = "../../out/optim/log_reg_example_1.pdf",
-         device = 'pdf')
-
-h <- function(x){
-  return(1/(1 + exp(-x)))
-}
-
-gradient <- function(data, betas){
-  n <- nrow(data)
-  const <- rep(1, nrow(data))
-  bx <- betas[1]*const + betas[2]*data$x
-  li <- data$y - h(bx)
-  g1 <- -2*sum(li)/n
-  g2 <- -2*sum(li*data$x)/n
-  return(c(g1, g2))
-}
-
-
-deviance <- function(betas, data = data){
-  n <- nrow(data)
-  const <- rep(1, nrow(data))
-  bx <- betas[1]*const + betas[2]*data$x
-  hbx <- h(bx)
-  aux <- (1 - data$y)*log(1 - hbx)
-  aux2 <- ifelse(is.nan(aux), 0, aux)
-  li <- data$y*log(hbx) + aux2
-  d <- -2*sum(li)/n
-  return(d)
-}
-
-
-backtrack <- function(betas, g, alpha, deviance, data, rho = 0.5, max_iter = 50, c1 = 10^-4){
-  funct_value <- do.call(deviance, list(betas, data))
-  norm_pk <- sum(g^2)
-  i = 0
-  while(i < max_iter){
-    i = i + 1
-    left <- do.call(deviance, list(betas - alpha*g, data))
-    right <- funct_value + c1*alpha*norm_pk
-    if(left <= right) break
-    alpha = alpha*rho
-  }
-  return(list(alpha = alpha,
-              iter = i))
-}
-
-
-
-max_it <- 1000
-data_gradient_descent <- tibble(it = 1:max_it,
-                                beta_0 = rep(0, max_it),
-                                beta_1 = rep(0, max_it),
-                                gradient_norm = rep(0, max_it),
-                                deviance = rep(0, max_it),
-                                alpha = rep(0, max_it))
-
-i = 0
-betas <- c(-10, 10) # reales 1 y 4
-g <- gradient(data, betas)
-g_norm <- sqrt(sum(g^2))
-while(i < max_it){
-  i = i + 1
-  g_norm_0 <- g_norm # old gradient norm
-  g <- gradient(data, betas)
-  g_norm <- sqrt(sum(g^2))
-  g_unit <- g/g_norm
-  data_gradient_descent$beta_0[i] <- betas[1]
-  data_gradient_descent$beta_1[i] <- betas[2]
-  data_gradient_descent$gradient_norm[i] <- g_norm
-  data_gradient_descent$deviance[i] <- deviance(betas, data)
-  if(g_norm < 0.0001 & g_norm/g_norm_0 > 0.8) break
-  backtrack_result <- backtrack(betas, g, 3, deviance, data)
-  alpha <- backtrack_result[[1]]
-  cat("It: ", i, 
-      "\n\tbeta_0: ", betas[1], 
-      "\n\tbeta_1: ", betas[2],
-      "\n\tgradient_norm: ", g_norm, 
-      "\n\tDirection: ", g_unit[1], g_unit[2],
-      "\n\talpha: ", alpha,
-      "\n\n")
-  data_gradient_descent$alpha[i] <- alpha
-  betas <- betas - alpha*g
-}
-
-
-data_gradient_descent <- data_gradient_descent[1:i,]
-
-data_gradient_descent %>% 
-  ggplot(aes(it, gradient_norm)) +
-  geom_point(size = 0.7) +
-  geom_line(size = 0.4)
-
-data_gradient_descent %>% 
-  ggplot(aes(it, deviance)) +
-  geom_point(size = 0.7) +
-  geom_line(size = 0.4)
-
-
-
-(data_gradient_descent %>% 
-    #filter(it < 35) %>% 
-    ggplot(aes(beta_0, beta_1)) +
-    xlab("Beta 0") +
-    ylab("Beta 1") +
-    geom_segment(
-      aes(
-        xend = c(tail(beta_0, n = -1), NA),
-        yend = c(tail(beta_1, n = -1), NA)
-      ),
-      size = 0.4,
-      color = '#919191',
-      arrow = arrow(length = unit(0.18, "cm"))
-    ) +
-    geom_point(size = 0.4, color = 'black') +
-    geom_point(aes(x, y),
-               data = tibble(x = beta_0,
-                             y = beta_1)) +
-    geom_point(aes(x, y),
-               data = tibble(x = model$coefficients[1],
-                             y = model$coefficients[2]),
-               shape = 'x',
-               size = 5) +
-    theme(panel.grid.minor = element_blank())
-) %>% 
-  ggsave(.,
-         file = "../../out/optim/log_reg_example_1_GD_iter.pdf",
-         device = 'pdf',
-         width = 8,
-         height = 5)
-
-
-
-
-```
-
-# Stochastic gradient descent
 
 ```{r, eval = F}
 
