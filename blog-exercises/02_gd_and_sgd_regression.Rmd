@@ -500,7 +500,7 @@ Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stop
 
 In SGD, an epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once.
 
-The following code shows the functions implemented to get SGD running.
+The following code shows the functions implemented to get SGD running. I use for loops, which I know is not the best idea in R, but it's to illustrate. Maybe later I'll implement it with Rcpp and see the difference in speed.
 
 ```{r}
 # Gradient for an observation
@@ -523,6 +523,7 @@ epoch_update <- function(data, betas, alpha, n_epoch, verbose = 1, reordering = 
     gradient_norm = rep(0, n))
   
   # Iterate over rows in data
+  # Not the best practise in R to use for loops, but it's to illustrate
   for(i in 1:n){
     # Update coefficients
     g <- gradient_row(data[data$ix == i,], betas) 
