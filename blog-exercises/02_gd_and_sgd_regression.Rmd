@@ -9,21 +9,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Loss function optimisation
+# Loss function optimization
 
-In statistical learning, one usually wants to find the parameters that minimise a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimisation comes in. For this post, I use definitions from *Numerical Optimization* (2nd Ed.) by Nocedal & Wright and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
+In statistical learning, one usually wants to find the parameters that minimize a loss function, which almost always has to do with the error of the model we're using. In many cases, as in linear regression, using the first and second order conditions, we can find a closed formula to find the parameters. But there are many other cases in which this isn't possible, that's when numerical optimization comes in. For this post, I use definitions from *Numerical Optimization* (2nd Ed.) by Nocedal & Wright and *Optimization Methods for Large-Scale Machine Learning* by Bottou, Curtis & Nocedal. 
 
-The general problem of unrestricted optimisation is
+The general problem of unrestricted optimization is
 
 \begin{equation}
   \min_{\theta \in \mathbb{R}^p} L(\theta).
 \end{equation}
 
-For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimisation algorithms are iterative. A solution is a vector $\theta^*$ called local minimiser, which makes the function $L$ to be minimised in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimiser if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
+For statistical learning, $L$ is usually a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters. Generally, numerical optimization algorithms are iterative. A solution is a vector $\theta^*$ called local minimizer, which makes the function $L$ to be minimized in a neighbourhood around $\theta^*$. Formally, a vector $\theta^*$ is a local minimizer if there exists a neighbourhood $\mathcal{N}$ of $\theta^*$ such that $L(\theta^*) \leq L(\theta)$ for all $\theta \in \mathcal{N}$.
 
-In numerical optimisation, we make use of the sufficient second order conditions. Suppose that the Hessian matrix $\nabla^2 L$ is continuous in an open neighbourhood of $\theta^*$, that the gradient $\nabla L(\theta^*) = 0$ and that $\nabla^2 L(\theta^*)$ is positive definite; then $\theta^*$ is a local minimiser of $L$.
+In numerical optimization, we make use of the sufficient second order conditions. Suppose that the Hessian matrix $\nabla^2 L$ is continuous in an open neighbourhood of $\theta^*$, that the gradient $\nabla L(\theta^*) = 0$ and that $\nabla^2 L(\theta^*)$ is positive definite; then $\theta^*$ is a local minimizer of $L$.
 
-This is basic calculus, but it provides the base of numerical optimisation algorithms. In general, all algorithms search for a point $\theta^*$ such that $\nabla L(\theta^*) = 0$. 
+This is basic calculus, but it provides the base of numerical optimization algorithms. In general, all algorithms search for a point $\theta^*$ such that $\nabla L(\theta^*) = 0$. 
 
 
 
@@ -37,7 +37,7 @@ In gradient descent, the direction $p_k$ in which the algorithm moves is the max
   \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
 \end{equation}
 
-We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the global minimiser of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
+We find a problem when we want to compute the step length $\alpha_k$: we want to find a value that the function $L$ decreases as much as possible, but we don't want to waste much time choosing the value. The best option is the global minimizer of the auxiliary function $\phi(\alpha_k) = L(\theta_k + \alpha_k p_k)$, but it's too expensive to compute. Generally, heuristics are used to choose the sequence of values for $\alpha_k$ and try which one satisfies those conditions.
 
 One of those conditions is called Armijo conditions, and finds the $\alpha_k$ that allows a sufficient descent in the function $L$, measured as
 
@@ -55,7 +55,7 @@ Now that we've covered some theory, to explain further the concept of gradient d
 
 ##### **Linear regression**
 
-In linear regression we want to minimise the quadratic loss function
+In linear regression we want to minimize the quadratic loss function
 
 \begin{equation}
 L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2.
@@ -106,7 +106,7 @@ model <- lm(y~x, data = data)
 ) 
 ```
 
-So, to minimise the quadratic loss function, we start with a vector $\beta^0 \in \mathbb{R}^2$, and in each iteration we update as
+So, to minimize the quadratic loss function, we start with a vector $\beta^0 \in \mathbb{R}^2$, and in each iteration we update as
 
 $$
 \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
@@ -203,7 +203,7 @@ rm(list = ls())
 
 ##### **Logistic regression**
 
-In the case of logistic regression, we want to minimise a loss function called deviance that is defined as
+In the case of logistic regression, we want to minimize a loss function called deviance that is defined as
 
 $$
 L(x, \beta) = - \frac{2}{n} \sum_{i=1}^{n} \left[ y_i \log(h(\beta^T x_i)) + (1-y_i) \log(1-h(\beta^T x_i)) \right] = 
@@ -282,7 +282,7 @@ data %>%
 ```
 
 
-To minimise the deviance, we do exactly as in the previous case: we start with an initial vector of parameters $\beta^0 \in \mathbb{R}^2$, and in each iteration we update
+To minimize the deviance, we do exactly as in the previous case: we start with an initial vector of parameters $\beta^0 \in \mathbb{R}^2$, and in each iteration we update
 
 $$
 \beta^{k+1} = \beta^k - \alpha_k \nabla_{\beta} L(x, \beta)
@@ -432,14 +432,14 @@ rm(list = ls())
 
 # Stochastic gradient descent (SGD)
 
-In statistical learning it is common to find the need to solve optimisation problems of the form
+In statistical learning it is common to find the need to solve optimization problems of the form
 
 \begin{equation}
 \min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
 L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
 \end{equation}
 
-In both past examples, the loss functions that we wanted to minimise were expressed in that way. Gradient descent uses iterations in the form
+In both past examples, the loss functions that we wanted to minimize were expressed in that way. Gradient descent uses iterations in the form
 
 \[
 \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
@@ -451,7 +451,7 @@ which involves evaluating $n$ gradients and then taking an average. In the cases
 \theta_{k+1} = \theta_k - \alpha_k \nabla \psi_{i_k}(\theta_k),
 \]
 
-where $i_k \in \left\{1, 2, ..., n \right\}$ is randomly chosen. The gradient $\nabla \psi_{i_k}(\theta_k)$ is an unbiased estimator of $\nabla L(\theta_k)$. This way, each iteration is really cheap because it involves the computation of only one gradient. It can happen that some $\nabla \psi_{i_k}(\theta_k)$ in particular doesn't give a direction of descent from $\theta_k$, but on average we do get descent directions, such that the sequence $\left\{ \theta_0, \theta_1, ... \right\}$ can be guided to a minimiser $\theta^*$.
+where $i_k \in \left\{1, 2, ..., n \right\}$ is randomly chosen. The gradient $\nabla \psi_{i_k}(\theta_k)$ is an unbiased estimator of $\nabla L(\theta_k)$. This way, each iteration is really cheap because it involves the computation of only one gradient. It can happen that some $\nabla \psi_{i_k}(\theta_k)$ in particular doesn't give a direction of descent from $\theta_k$, but on average we do get descent directions, such that the sequence $\left\{ \theta_0, \theta_1, ... \right\}$ can be guided to a minimizer $\theta^*$.
 
 ### Examples: 
 
@@ -472,7 +472,7 @@ model <- lm(y~x, data = data)
 ```
 
 
-As we saw before, we want to minimise the quadratic loss function. Here, each $\psi_i(x, \theta)$ is
+As we saw before, we want to minimize the quadratic loss function. Here, each $\psi_i(x, \theta)$ is
 
 $$
 \psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
@@ -523,7 +523,7 @@ epoch_update <- function(data, betas, alpha, n_epoch, verbose = 1, reordering = 
     gradient_norm = rep(0, n))
   
   # Iterate over rows in data
-  # Not the best practise in R to use for loops, but it's to illustrate
+  # Not the best practice in R to use for loops, but it's to illustrate
   for(i in 1:n){
     # Update coefficients
     g <- gradient_row(data[data$ix == i,], betas) 
