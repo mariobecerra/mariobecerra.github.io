@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	
+	<title>Make a Static Website with Jekyll &#8211; Tania Rascia</title>
+<link rel='dns-prefetch' href='//s.w.org' />
+<link rel="alternate" type="application/rss+xml" title="Tania Rascia &raquo; Make a Static Website with Jekyll Comments Feed" href="https://www.taniarascia.com/make-a-static-website-with-jekyll/feed/" />
+<meta name="author" content="Tania Rascia">
+<meta name="description" content="Jekyll is a static site generator that runs on the Ruby programming language. You may have heard of Jekyll or static site generators, but dont know how ...">
+<meta property="og:title" content="Make a Static Website with Jekyll">
+<meta property="og:description" content="Jekyll is a static site generator that runs on the Ruby programming language. You may have heard of Jekyll or static site generators, but dont know how ...">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.taniarascia.com/make-a-static-website-with-jekyll/">
+<meta property="og:site_name" content="Tania Rascia - Web Design and Development">
+<meta property="og:image" content="https://www.taniarascia.com/wp-content/uploads/jekyll-2-150x150.png">
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/2.3\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/2.3\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/www.taniarascia.com\/wp-includes\/js\/wp-emoji-release.min.js"}};
+			!function(a,b,c){function d(a){var b,c,d,e,f=String.fromCharCode;if(!k||!k.fillText)return!1;switch(k.clearRect(0,0,j.width,j.height),k.textBaseline="top",k.font="600 32px Arial",a){case"flag":return k.fillText(f(55356,56826,55356,56819),0,0),b=j.toDataURL(),k.clearRect(0,0,j.width,j.height),k.fillText(f(55356,56826,8203,55356,56819),0,0),c=j.toDataURL(),b!==c&&(k.clearRect(0,0,j.width,j.height),k.fillText(f(55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447),0,0),b=j.toDataURL(),k.clearRect(0,0,j.width,j.height),k.fillText(f(55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447),0,0),c=j.toDataURL(),b!==c);case"emoji4":return k.fillText(f(55358,56794,8205,9794,65039),0,0),d=j.toDataURL(),k.clearRect(0,0,j.width,j.height),k.fillText(f(55358,56794,8203,9794,65039),0,0),e=j.toDataURL(),d!==e}return!1}function e(a){var c=b.createElement("script");c.src=a,c.defer=c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var f,g,h,i,j=b.createElement("canvas"),k=j.getContext&&j.getContext("2d");for(i=Array("flag","emoji4"),c.supports={everything:!0,everythingExceptFlag:!0},h=0;h<i.length;h++)c.supports[i[h]]=d(i[h]),c.supports.everything=c.supports.everything&&c.supports[i[h]],"flag"!==i[h]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[i[h]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(g=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",g,!1),a.addEventListener("load",g,!1)):(a.attachEvent("onload",g),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),f=c.source||{},f.concatemoji?e(f.concatemoji):f.wpemoji&&f.twemoji&&(e(f.twemoji),e(f.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel='stylesheet' id='style-css'  href='https://www.taniarascia.com/wp-content/themes/oblate/css/main.css?08-01-2017' type='text/css' media='all' />
+<link rel='stylesheet' id='All-css'  href='//fonts.googleapis.com/css?family=Roboto%3A400%2C700%2C900%7CRoboto+Mono%3A400%7CMerriweather%3A700%2C900' type='text/css' media='all' />
+<link rel='stylesheet' id='FontAwesome-css'  href='//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css' type='text/css' media='all' />
+<link rel='https://api.w.org/' href='https://www.taniarascia.com/wp-json/' />
+<link rel='prev' title='Full Screen Navigation Overlay' href='https://www.taniarascia.com/full-screen-navigation-overlay/' />
+<link rel='next' title='Learn Sass Now: A Guide to Installing, Using and Understanding Sass' href='https://www.taniarascia.com/learn-sass-now/' />
+<meta name="generator" content="WordPress 4.8.2" />
+<link rel="canonical" href="https://www.taniarascia.com/make-a-static-website-with-jekyll/" />
+<link rel='shortlink' href='https://www.taniarascia.com/?p=1157' />
+<link rel="alternate" type="application/json+oembed" href="https://www.taniarascia.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.taniarascia.com%2Fmake-a-static-website-with-jekyll%2F" />
+<link rel="alternate" type="text/xml+oembed" href="https://www.taniarascia.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.taniarascia.com%2Fmake-a-static-website-with-jekyll%2F&#038;format=xml" />
+
+	
+	<script>
+		(function (i, s, o, g, r, a, m) {
+			i['GoogleAnalyticsObject'] = r;
+			i[r] = i[r] || function () {
+				(i[r].q = i[r].q || []).push(arguments)
+			}, i[r].l = 1 * new Date();
+			a = s.createElement(o),
+				m = s.getElementsByTagName(o)[0];
+			a.async = 1;
+			a.src = g;
+			m.parentNode.insertBefore(a, m)
+		})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+		ga('create', 'UA-42068444-1', 'auto');
+		ga('send', 'pageview');
+	</script>
+
+	
+	
+</head>
+
+<body>
+	<h1 class="screen-reader-text">Tania Rascia Web Design and Development</h1>
+	<a class="screen-reader-text" href="#main-content">Skip Navigation</a>
+	
+	<nav class="secondary-navigation">
+		<div class="secondary-title"><a href="https://www.taniarascia.com"><i class="fa fa-home" aria-hidden-"true"></i>&nbsp; Tania Rascia</a> <span class="divider"> | </span>
+			<span class="secondary-subtitle">
+		Make a Static Website with Jekyll		</span></div>
+		<form role="search" method="get" class="nav-search" action="https://www.taniarascia.com/">
+			<label>
+			<span class="screen-reader-text">Search for:</span></label>
+			<input type="search" placeholder="Search" value=""
+			  name="s" title="Search for:" class="nav-search-input">
+			<button type="submit" class="nav-search-submit"><i class="fa fa-search" aria-hidden="true"></i></button>
+		</form>
+	</nav>
+
+	<nav class="main-navigation">
+		<a href="https://www.taniarascia.com/tutorials" class="tutorials "><i class="fa fa-map-o" aria-hidden="true"></i> <span>Tutorials</span></a>
+		<a href="https://www.taniarascia.com/snippets" class="snippets "><i class="fa fa-scissors" aria-hidden="true"></i> <span>Snippets</span></a>
+		<a href="https://www.taniarascia.com/me" class="tania "><i class="fa fa-heart-o" aria-hidden="true"></i> <span>Tania</span></a>
+		<a href="https://www.taniarascia.com/work" class="portfolio "><i class="fa fa-folder-open-o" aria-hidden="true"></i> <span>Portfolio</span></a>
+		<a href="https://www.taniarascia.com/thoughts" class="thoughts "><i class="fa fa-commenting-o" aria-hidden="true"></i> <span>Thoughts</span></a>
+	</nav>
+
+	<main class="main" id="main-content"><article id="post-1157">
+
+	<header class="single-header">
+		<div class="small-container">
+						<a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/"><img src="https://www.taniarascia.com/wp-content/uploads/jekyll-2-150x150.png" alt="Make a Static Website with Jekyll" height="150" width="150"></a>
+						<h1>
+				Make a Static Website with Jekyll			</h1>
+			<div class="the-time"><time datetime="2015-11-30">
+				November 30, 2015</time> /
+				<a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/#comments">71 responses</a>			</div>
+			
+		</div>
+	</header>
+
+	<section class="single-body">
+		<div class="small-container">
+			<p><a href="https://jekyllrb.com/">Jekyll</a> is a static site generator that runs on the Ruby programming language. You may have heard of Jekyll or static site generators, but don&#8217;t know how or where to get started. This guide is intended to be a complete tutorial, and require no additional resources to get you up and running with Jekyll.</p>
+<p>While Jekyll is advertised as a blogging platform, it can be used for static websites as well, much like WordPress. Jekyll harnesses the power of <a href="https://daringfireball.net/projects/markdown/">markdown</a>, which makes writing HTML much easier and more efficient. Additionally, Jekyll has Sass built in, and if you&#8217;ve never used a CSS preprocessor, it&#8217;s a great time to learn. If you already know how to use Sass, you&#8217;ll feel right at home.</p>
+<p>This is what the website we make will look like:</p>
+<p><img src="https://www.taniarascia.com/wp-content/uploads/Screen-Shot-2015-11-30-at-2.20.25-AM.png"></p>
+<p><a href="http://taniarascia.github.io/startjekyll/" class="button">View Demo</a> <a href="http://github.com/taniarascia/startjekyll/" class="button">View on GitHub</a></p>
+<h4>Prerequisites</h4>
+<ul>
+<li>Basic knowledge of HTML and CSS</li>
+<li><a href="https://www.taniarascia.com/how-to-use-the-command-line-for-apple-macos-and-linux/">Basic command line knowledge</a></li>
+<li>A GitHub account</li>
+</ul>
+<p>If you don&#8217;t have a basic knowledge of command lines and Git, please read <a href="http://www.taniarascia.com/getting-started-with-git/">the getting started with Git</a> article. This will cover everything you need to know to get started with using Git and the command line.</p>
+<h4>Goals</h4>
+<ul>
+<li>Learn what a static site generator is</li>
+<li>Install Jekyll</li>
+<li>Create a custom website running on Jekyll and Sass</li>
+<li>Deploy a Jekyll site to GitHub pages</li>
+</ul>
+<p>Additionally, this tutorial is currently Mac only. If I get a request to do a Windows tutorial, I&#8217;ll look into it, but until then, you must be running OSX for this tutorial to be effective.</p>
+<h2>What is a static site generator?</h2>
+<p>A static site generator builds a website using plain HTML files. When a user visits a website created by a static site generator, it is loaded no differently than if you had created a website with plain HTML. By contrast, a dynamic site running on a server side language, such as PHP, must be built every time a user visits the site.</p>
+<p>You can treat a static site generator as a very simple sort of CMS (content management system). Instead of having to include your entire header and footer on every page, for example, you can create a header.html and footer.html and load them into each page. Instead of having to write in HTML, you can write in Markdown, which is much faster and more efficient.</p>
+<p>Here are some of the main advantages of static site generators over dynamic sites:</p>
+<ul>
+<li><strong>Speed</strong> &#8211; your website will perform much faster, as the server does not need to parse any content. It only needs to read plain HTML.</li>
+<li><strong>Security</strong> &#8211; your website will be much less vulnerable to attacks, since there is nothing that can be exploited server side.</li>
+<li><strong>Simplicity</strong> &#8211; there are no databases or programming languages to deal with. A simple knowledge of HTML and CSS is enough.</li>
+<li><strong>Flexibility</strong> &#8211; you know exactly how your site works, as you made it from scratch.</li>
+</ul>
+<p>Of course, dynamic sites have their advantages as well. The addition of an admin panel makes for ease of updating, especially for those who are not tech-savvy. Generally, a static site generator would not be the best idea for making a CMS for a client. Static site generators also don&#8217;t have the possibility of updating with real time content. It&#8217;s important to understand how both work to know what would work best for your particular project. </p>
+<h2>Installing Jekyll</h2>
+<p>We&#8217;re going to install Jekyll locally before deploying anything to GitHub pages.</p>
+<h3>Install Command Line Tools</h3>
+<p>Open Terminal. Check to see if you have XCode Command Line Tools installed by typing <code>gcc -v</code>. At this point, it will prompt you to install if you don&#8217;t. Or run this code to install:</p>
+<pre><code class="language-bash">xcode-select --install</code></pre>
+<h3>Install Ruby</h3>
+<p>Ruby should come pre-installed on all OSX computers. You can check if Ruby is installed by running <code>ruby -v</code>. It should return with Ruby version 2.0.0 or higher.</p>
+<div class="terminal">ruby 2.0.0p645 (2015-04-13 revision 50299) [universal.x86_64-darwin15]</div>
+<p>If for some reason you&#8217;re running a lower version, you can update.</p>
+<pre><code class="language-bash">sudo gem install ruby</code></pre>
+<blockquote class="details"><p>If you plan on using Ruby for more purposes, it might be advisable to install <a href="https://rvm.io/">Ruby Version Manager</a>. Otherwise, the above commands are perfectly fine.</p></blockquote>
+<h3>Install Bundler</h3>
+<p>Bundler is a package manager that will aid you in installing all the Jekyll dependencies.</p>
+<pre><code class="language-bash">sudo gem install bundler</code></pre>
+<div class="terminal">Successfully installed bundler-1.10.6<br />
+Parsing documentation for bundler-1.10.6<br />
+1 gem installed</div>
+<h3>Create Gemfile</h3>
+<p>Create a directory, and add a file called <b>Gemfile</b>. The file doesn&#8217;t contain an extension. Type the following contents into the file and save it.</p>
+<pre><code class="language-ruby">gem 'github-pages'
+source 'https://rubygems.org'</code></pre>
+<p>In Terminal, run this command in the directory that contains the Gemfile:</p>
+<pre><code class="language-bash">bundle install</code></pre>
+<p>This command should run for a while. It might ask you for your sudo password, or for you to run <code>sudo bundle install</code>. When it&#8217;s finished, it will say something like this:</p>
+<div class="terminal">Bundle complete! 1 Gemfile dependency, 55 gems now installed.</div>
+<h3>Install Jekyll</h3>
+<p>Great! Now that that&#8217;s finished, you can successfully install Jekyll. I&#8217;m going to call my project <strong>startjekyll</strong></p>
+<pre><code class="language-bash">jekyll new startjekyll</code></pre>
+<div class="terminal">New jekyll site installed in /Users/tania/Sites/startjekyll. </div>
+<p>Move to the new directory.</p>
+<pre><code class="language-bash">cd startjekyll</code></pre>
+<p>And initialize a new Git repository.</p>
+<pre><code class="language-bash">git init</code></pre>
+<div class="terminal">Initialized empty Git repository in /Users/tania/Sites/startjekyll/.git/</div>
+<p>At this point, all the setup is complete. In your project directory, run the following code:</p>
+<pre><code class="language-bash">jekyll serve</code></pre>
+<p>This command runs a &#8220;watch&#8221; on the entire server. Changes made to any files (except the configuration file!) will be compiled into static HTML.</p>
+<p>Now go to the url <code>http://localhost:4000</code>. You will see this page.</p>
+<p><img src="https://www.taniarascia.com/wp-content/uploads/Screen-Shot-2015-11-30-at-12.18.39-AM.png"></p>
+<p>Congratulations, you&#8217;ve just installed Jekyll! If you type <kbd>CTRL + C</kbd> in Terminal, it will end the running process and the site will no longer be served to localhost. Simply run <code>jekyll serve</code> again and it will come back up.</p>
+<h2>Creating a Jekyll theme</h2>
+<p>With Jekyll, we&#8217;ll be able to process SCSS (Sass) files into CSS (<b>.scss</b> -> <b>.css</b>), and Markdown into HTML (<b>.md</b> -> <b>.html</b>). No additional task runners or Terminal commands are required! </p>
+<p>There are a few important things to know about the Jekyll file system.</p>
+<ul>
+<li>The &#8220;distribution&#8221; folder is called <b>_site</b>. This is what the static site generator generates! <strong>Never</strong> place any files in that folder; they will be deleted and overwritten. </li>
+<li>The <b>_sass</b> folder is for Sass partials. Every file in here should begin with an underscore, and it will compile into the <b>css</b> folder.</li>
+<li>Any file or folder placed into the main directory will compile into the <b>_site</b> directory as-is.</li>
+</ul>
+<p>There is more to know, but we&#8217;ll learn along the way.</p>
+<blockquote class="details"><p>I&#8217;m going to go through all the files from here on out. If you&#8217;d rather clone the Git repository, you can <a href="https://github.com/taniarascia/startjekyll">view it here</a>. All the files in the repo will be the same as what I display here.</p></blockquote>
+<h2>Configuration</h2>
+<p>In the main directory, there&#8217;s a file called <b>_config.yml</b>. It looks like this:</p>
+<pre><code class="language-yaml"># Site settings
+title: Your awesome title
+email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b7ced8c2c59ad2dad6dedbf7d3d8dad6ded999d4d8da">[email&#160;protected]</a>
+description: &gt; # this means to ignore newlines until "baseurl:"
+  Write an awesome description for your new site here. You can edit this
+  line in _config.yml. It will appear in your document head meta (for
+  Google search results) and in your feed.xml site description.
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://yourdomain.com" # the base hostname &amp; protocol for your site
+twitter_username: jekyllrb
+github_username:  jekyll
+
+# Build settings
+markdown: kramdown</code></pre>
+<p>Pretty obvious. There are two important things to know about the config file:</p>
+<ul>
+<li>Changes made to <b>_config.yml</b> will not be watched by <code>jekyll serve</code>. You must restart and reserve Jekyll after any config changes.</li>
+<li>All indentation is mandatory and must be made with two spaces, or else the file will not work.</li>
+</ul>
+<p>I&#8217;m going to make a few changes to the configuration.</p>
+<pre><code class="language-yaml"># Site Settings
+title: Start Jekyll
+email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1b6f7a75727a697a6878727a5b7c767a727735787476">[email&#160;protected]</a>
+description: &gt;
+  A guide to getting started with Jekyll.
+baseurl: ""
+url: "http://localhost:4000"
+twitter_username: taniarascia
+github_username:  taniarascia
+# Build Settings
+sass:
+  sass_dir: _sass
+include: ['_pages']
+kramdown:
+  input: GFM</code></pre>
+<p>I changed the base URL to <b>http://localhost:4000</b>. This will be for the dev configuration. I&#8217;m declaring <code>_sass</code> as the sass directory, to ensure the Sass compiles correctly. I&#8217;m adding <code>include: ['_pages']</code> so that custom pages will be organized into their own directory, and <code>input: GFM</code> will allow Github Flavored Markdown.</p>
+<h2>Customizing your Jekyll Theme</h2>
+<p>The default styles try to be basic, but they&#8217;re still far too stylized for my liking. We&#8217;re going to override all the styles and make them much more simple. You can turn off the Jekyll serve at this point and just start saving files. We&#8217;ll go from top to bottom alphabetically.</p>
+<p>I&#8217;m using my own name as an example, but obviously change everything to match you.</p>
+<h3>_includes</h3>
+<p>In Jekyll, <b>_includes</b> are files that should show up on every page &#8211; header, footer, etc.</p>
+<h5>footer.html</h5>
+<pre><code class="language-html">&lt;footer&gt;
+	&lt;p&gt;By &lt;a href="http://taniarascia.com"&gt;Tania&lt;/p&gt;
+&lt;/footer&gt;</code></pre>
+<h5>head.html</h5>
+<p>Any <code>head</code> metadata.</p>
+<pre><code class="language-html">&lt;head&gt;
+	&lt;meta charset="utf-8"&gt;
+	&lt;meta http-equiv="x-ua-compatible" content="ie=edge"&gt;
+	&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+
+	&lt;title&gt;{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}&lt;/title&gt;
+
+	&lt;link rel="stylesheet" href="{{ "/css/main.css" | prepend: site.baseurl }}"&gt;
+	&lt;link rel="canonical" href="{{ page.url | replace:'index.html','' | prepend: site.baseurl | prepend: site.url }}"&gt;
+	&lt;link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700,800,600' rel='stylesheet' type='text/css'&gt;
+	&lt;link href='https://fonts.googleapis.com/css?family=Muli:400,300' rel='stylesheet' type='text/css'&gt;
+
+&lt;/head&gt; </code></pre>
+<h5>header.html</h5>
+<p>Your navigation and header. I will dynamically load all pages into the navigation bar, except for the blog page, which I will load manually.</p>
+<pre><code class="language-html">&lt;aside&gt;
+	&lt;div class="container"&gt;
+		&lt;nav&gt;
+			&lt;ul&gt;
+				{% for page in site.pages %} {% if page.title %}
+				&lt;li&gt;&lt;a href="{{ page.url | prepend: site.baseurl }}"&gt;{{ page.title }}&lt;/a&gt;&lt;/li&gt;
+				{% endif %} {% endfor %}
+				&lt;li&gt;&lt;a href="{{ "/blog" | prepend: site.baseurl }}"&gt;Blog&lt;/a&gt;&lt;/li&gt;
+			&lt;/ul&gt;
+			&lt;/li&gt;
+			&lt;/ul&gt;
+		&lt;/nav&gt;
+	&lt;/div&gt;
+&lt;/aside&gt;
+
+&lt;header&gt;
+	&lt;h1&gt;&lt;a href="{{ site.baseurl }}"&gt;{{ site.title }}&lt;/a&gt;&lt;/h1&gt;
+&lt;/header&gt;</code></pre>
+<h3>_layouts</h3>
+<p>The layout that your content will conform to.</p>
+<h5>default.html</h5>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+{% include head.html %}
+
+&lt;body&gt;
+	{% include header.html %}
+	&lt;main&gt;
+		&lt;article&gt;
+			{{ content }}
+		&lt;/article&gt;
+		{% include footer.html %}
+	&lt;/main&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;</code></pre>
+<h5>page.html</h5>
+<pre><code class="language-html">---
+layout: default
+---
+
+&lt;h2&gt;{{ page.title }}&lt;/h2&gt;
+   
+    {{ content }}</code></pre>
+<p>All the dashes at the top are <strong>mandatory</strong>. If you don&#8217;t include them, the website won&#8217;t work properly. For pages and posts, the default layout gets loaded, plus any additional layout information you desire.</p>
+<h5>post.html</h5>
+<p>Same as the page, but with date and author metadata.</p>
+<pre><code class="language-html">---
+layout: default
+---
+
+&lt;h2&gt;{{ page.title }}&lt;/h2&gt;
+&lt;time&gt;{{ page.date | date: "%b %-d, %Y" }}{% if page.author %} • {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}&lt;/time&gt;
+
+{{ content }}</code></pre>
+<h3>_pages</h3>
+<p>The default Jekyll website does not come with a <b>_pages</b> directory, but I like to include it so the main directory stays clean.</p>
+<h5>01_about.md</h5>
+<p>Now we&#8217;re creating the markdown files. Prepending them with a number ensures that they appear in the order you specify.</p>
+<pre><code class="language-markdown">---
+layout: page
+title: About
+permalink: /about/
+---
+
+About content goes here.
+
+* A list item
+* Another list item</code></pre>
+<h5>02_contact.md</h5>
+<pre><code class="language-markdown">---
+layout: page
+title: Contact
+permalink: /contact/
+---
+
+Contact content goes here.
+
+My e-mail is [<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="650008040c0925160a0800110d0c0b024b060a08">[email&#160;protected]</a>](mailto:<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c7a2aaa6aeab87b4a8aaa2b3afaea9a0e9a4a8aa">[email&#160;protected]</a>).</code></pre>
+<h3>_posts</h3>
+<p>I&#8217;m going to leave the post exactly as it is.</p>
+<p>Delete about.md from the main directory, since we&#8217;ve put it in the <b>_pages</b> directory.</p>
+<h3>index.html</h3>
+<p><b>index.html</b> in the main directory will be the main page of the site.</p>
+<pre><code class="language-html">---
+layout: default
+---
+
+  &lt;h2&gt;Main Page&lt;/h2&gt;
+
+  Main content goes here. </code></pre>
+<h3>blog</h3>
+<p>Create a new directory called <b>blog</b>. Inside, create an <b>index.html</b>. This will be the main blog page that will contain all your posts.</p>
+<pre><code class="language-html">---
+layout: default
+---
+
+&lt;h4&gt;blog&lt;/h4&gt;
+{% for post in site.posts %}
+		&lt;time&gt;{{ post.date | date: "%b %-d, %Y" }}&lt;/time&gt;
+		&lt;h3&gt;&lt;a href="{{ post.url | prepend: site.baseurl }}"&gt;{{ post.title }}&lt;/a&gt;&lt;/h3&gt;
+{% endfor %}
+
+&lt;p&gt;subscribe &lt;a href="{{ "/feed.xml" | prepend: site.baseurl }}"&gt;via RSS&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+<h3>css</h3>
+<p>The <b>css</b> directory in the root should contain one file &#8211; <b>main.scss</b>. Edit it to contain the following:</p>
+<pre><code class="language-scss">---
+# Front matter comment to ensure Jekyll properly reads file.
+---
+@import 
+	"base",
+  "layout",
+  "syntax-highlighting"</code></pre>
+<p>Leave the top part exactly as is.</p>
+<h3>_sass</h3>
+<p>The absolute last directory that we need to edit &#8211; the sass partials. Create each of these files in the <code>_sass</code> directory.</p>
+<h5>_base.scss</h5>
+<p>Variables, mixins, and resets will go here.</p>
+<pre><code class="language-scss">$content-width: 800px;
+$main: #19CCAA;
+$font-style: 'Open Sans', sans-serif;
+$font-color: #262626;
+$link-color: #425469;
+$link-hover-color: $main;
+$heading-font: 'Muli', sans-serif;
+$heading-font-color: #425469;
+$light: #E7EDF4;
+$header:  #1D1425;
+
+*,
+*::before,
+*::after {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}</code></pre>
+<h5>_syntax-highlighting.scss</h5>
+<p>Simply remove this line from the file:</p>
+<pre><code class="language-scss">    @extend %vertical-rhythm;
+</code></pre>
+<h5>_layout.scss</h5>
+<p>All my styles will go in here. I made a simple, responsive website that doesn&#8217;t rely on any frameworks.</p>
+<pre><code class="language-scss">body {
+	margin: 0;
+	color: $font-color;
+	font-family: $font-style;
+	font-size: 1.1em;
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+	font-weight: 600;
+	color: $heading-font-color;
+	font-family: $heading-font;
+	line-height: 1.5;
+}
+h1 {
+	color: $main;
+	font-size: 2.5em;
+	a,
+	a:visited {
+		text-decoration: none;
+		color: $main;
+	}
+}
+h2 {
+	font-size: 2em;
+}
+a,
+a:visited {
+	color: $link-color;
+	text-decoration: underline;
+	font-weight: bold;
+}
+a:hover {
+	color: $link-hover-color;
+	text-decoration: underline;
+}
+header {
+	background: $header;
+	padding: 0px 15px;
+	text-align: center;
+	margin: 50px 0 0;
+	height: 50vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+main {
+	padding: 0 15px;
+	max-width: $content-width;
+	margin: 0 auto;
+}
+time {
+	color: #898989;
+}
+.container {
+	max-width: $content-width;
+	margin: 0 auto;
+}
+
+/* Aside */
+
+aside {
+	position: fixed;
+	top: 0;
+	left: 0;
+	background: #fff;
+	width: 100%;
+	z-index: 2;
+	border-bottom: 1px solid lighten($light, 30%);
+	box-shadow: 0px 1px 1px RGBA(4, 25, 54, .1);
+	nav {
+		float: left;
+		max-width: 800px;
+		margin: 0 auto;
+		ul {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			li {
+				float: left;
+				position: relative;
+				a {
+					text-decoration: none;
+					display: block;
+					padding: 15px;
+					font-family: 'Muli', sans-serif;
+					line-height: 20px;
+					margin-bottom: -1px;
+					box-shadow: 0;
+					&amp;:hover,
+					&amp;:active {
+						background: $header;
+						text-decoration: none;
+						color: $main;
+					}
+				}
+			}
+		}
+		&amp;:after {
+			content: '';
+			display: table;
+			clear: both;
+		}
+	}
+}
+footer {
+	text-align: center;
+	padding: 40px;
+}
+</code></pre>
+<h2>Serve Jekyll</h2>
+<p>At this point, all the files are ready and jekyll can be served.</p>
+<pre><code class="language-bash">jekyll serve</code></pre>
+<p>If you inserted all the code exactly as above, the sass partials will compile into the main.scss. All the rest of the files will write to <b>_site</b> site, which is the distribution folder. </p>
+<div class="terminal">Server running&#8230; press ctrl-c to stop.</div>
+<p>If I make a change to any of the sass files, they should compile.</p>
+<div class="terminal">      Regenerating: 1 file(s) changed at 2015-11-30 02:54:11 &#8230;done in 0.090263 seconds.<br />
+      Regenerating: 1 file(s) changed at 2015-11-30 02:54:11 &#8230;done in 0.120487 seconds.</div>
+<h2>Pushing Jekyll site to GitHub pages</h2>
+<p>Create an empty repository in GitHub. Mine is <strong>startjekyll</strong>, so the Git repo URL is this:</p>
+<pre><code>http://github.com/taniarascia/startjekyll</code></pre>
+<p>There is one change that needs to be made in order to have one site for both your local Jekyll and the live GitHub pages.</p>
+<p>Duplicate your <b>_config.yml</b> and call it <b>_config_dev.yml</b>.</p>
+<p>Leave the <b>_config_dev.yml</b> as is, and change <b>_config.yml</b> for the live site.</p>
+<pre><code class="language-yaml">baseurl: "/startjekyll"
+url: "http://taniarascia.github.io"</code></pre>
+<p>Now, when you want to work on the site locally, you will run the following command:</p>
+<pre><code class="language-bash">jekyll serve --config _config.yml,_config_dev.yml</code></pre>
+<p>And it will load the information from the dev config.</p>
+<p>Serve your Jekyll one last time to ensure all the final changes have been updated. Here are the commands to push the site to GitHub pages:</p>
+<pre><code class="language-bash">git remote add origin https://github.com/taniarascia/startjekyll.git</code></pre>
+<p>Add the GitHub repository.</p>
+<pre><code class="language-bash">git checkout -b gh-pages</code></pre>
+<p>Ensures that you&#8217;re on the <code>gh-pages</code> branch, not <code>master</code>.</p>
+<pre><code class="language-bash">git add .</code></pre>
+<p>Track all files.</p>
+<pre><code class="language-bash">git commit -am "Initial commit"</code></pre>
+<p>Commit all files.</p>
+<pre><code class="language-bash">git push origin gh-pages</code></pre>
+<p>Push all files to <b>gh-pages</b> branch.</p>
+<p>At this point, you should be able to open up <a href="http://taniarascia.github.io/startjekyll">taniarascia.github.io/startjekyll</a>, and it should be your Jekyll project! Without using any external task runners (like Grunt or Gulp), you can now work on the Sass files on your website, and serve up markdown files in place of HTML.</p>
+<p>From here, it will be very easy to customize Jekyll to your liking. I purposefully kept every page as simple as possible, using semantic HTML5 tags. I sincerely hope this guide helped get you up and running with Jekyll. I documented all the steps along the way to ensure that the Sass will compile properly, and you won&#8217;t have issues being on the right branch to push to GitHub pages.</p>
+<p>If you came across any trouble or confusion, please let me know and I&#8217;ll improve the tutorial.</p>
+			<div class="section-content share" id="share">
+			<h2>The Author</h2>
+			<p><small>If you've found this article helpful or interesting and think others would benefit from reading it, please share!</small></p>
+				<a href="https://twitter.com/share?url=https://www.taniarascia.com/make-a-static-website-with-jekyll/&text=Make a Static Website with Jekyll&via=taniarascia&hashtags=webdev" target="_blank">	
+				<span class="fa-stack fa-lg">
+				<i class="fa fa-circle fa-stack-2x twitter"></i>
+				<i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+				</span>
+				</a>
+				<a href="https://www.reddit.com/submit?url=https://www.taniarascia.com/make-a-static-website-with-jekyll/&title=Make a Static Website with Jekyll" target="_blank">
+				<span class="fa-stack fa-lg">
+				<i class="fa fa-circle fa-stack-2x reddit"></i>
+				<i class="fa fa-reddit-alien fa-stack-1x fa-inverse"></i>
+				</span>
+				</a>
+				<a href="http://www.facebook.com/sharer.php?u=https://www.taniarascia.com/make-a-static-website-with-jekyll/" target="_blank">
+				<span class="fa-stack fa-lg">
+					<i class="fa fa-circle fa-stack-2x facebook"></i>
+					<i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+					</span>
+					</a>
+				<a href="https://news.ycombinator.com/submitlink?u=https://www.taniarascia.com/make-a-static-website-with-jekyll/&t=Make a Static Website with Jekyll" target="_blank">
+				<span class="fa-stack fa-lg">
+				<i class="fa fa-circle fa-stack-2x hackernews"></i>
+				<i class="fa fa-hacker-news fa-stack-1x fa-inverse"></i>
+				</span>
+				</a>
+			</div>
+			<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+			<p><img src="https://www.taniarascia.com/wp-content/uploads/face-300x300.jpg" class="my-avatar">Thank you for reading! I'm <strong>Tania Rascia</strong>, and I write no-nonsense guides for designers and developers. <strong>If my content has been valuable to you, please help me keep the site <mark>ad-free</mark> and continuously updated with quality tutorials and material by making a donation.</strong> Any amount helps and is greatly appreciated! Otherwise, <a href="https://www.taniarascia.com/contact">let me know</a> any ideas you have on a course you'd be eager to see.</p>
+			<input type="hidden" name="cmd" value="_s-xclick">
+			<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+			">
+			<input type="submit" name="submit" alt="PayPal - The safer, easier way to pay online!" class="button secondary-button" value="Donate!">
+			<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+			</form>
+
+		</div>
+
+	</section>
+
+</article>
+
+<section id="comments" class="comments-area">
+	<div class="small-container">
+
+			<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Write a response <small><a rel="nofollow" id="cancel-comment-reply-link" href="/make-a-static-website-with-jekyll/#respond" style="display:none;">Cancel reply</a></small></h3>			<form action="https://www.taniarascia.com/wp-comments-post.php" method="post" id="commentform" class="comment-form">
+				<p class="comment-notes"><span id="email-notes">Your email address will not be published.</span></p><p class="comment-form-comment"><label for="comment">Comment</label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" aria-required="true" required="required"></textarea></p><p class="comment-form-author"><label for="author">Name</label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" /></p>
+<p class="comment-form-email"><label for="email">Email</label> <input id="email" name="email" type="text" value="" size="30" maxlength="100" aria-describedby="email-notes" /></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='1157' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="ffee293d9a" /></p><p style="display: none;"><input type="hidden" id="ak_js" name="ak_js" value="175"/></p>			</form>
+			</div><!-- #respond -->
+	
+			
+			<h3 class="comments-title">
+				Discussion
+							</h3>
+			<ul class="comment-list">
+						<li class="comment even thread-even depth-1" id="comment-5088">
+				<div id="div-comment-5088" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/c0ea64c6f6611a6867543f48af940952?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c0ea64c6f6611a6867543f48af940952?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Johan Tapper</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-5088">
+			September 6, 2017 at 3:20 am</a>		</div>
+
+		<p>A Windows guide sure would be nice. 🙂</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=5088#respond' onclick='return addComment.moveForm( "div-comment-5088", "5088", "respond", "1157" )' aria-label='Reply to Johan Tapper'>Reply</a></div>
+				</div>
+		</li><!-- #comment-## -->
+		<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-4773">
+				<div id="div-comment-4773" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/f8368636ef9d7915227d5e9807f5f22b?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/f8368636ef9d7915227d5e9807f5f22b?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Ibukun</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4773">
+			July 30, 2017 at 2:38 am</a>		</div>
+
+		<p>Really, thank you Tania !</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=4773#respond' onclick='return addComment.moveForm( "div-comment-4773", "4773", "respond", "1157" )' aria-label='Reply to Ibukun'>Reply</a></div>
+				</div>
+		</li><!-- #comment-## -->
+		<li class="comment even thread-even depth-1 parent" id="comment-4524">
+				<div id="div-comment-4524" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/6f25472e911257b5527f24b25cca1e13?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6f25472e911257b5527f24b25cca1e13?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Russell Silva</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4524">
+			June 25, 2017 at 3:08 pm</a>		</div>
+
+		<p>&gt; _syntax-highlighting.scss<br />
+&gt; Simply remove this line from the file:</p>
+<p>&#8220;`<br />
+    @extend %vertical-rhythm;<br />
+&#8220;`</p>
+<p>I&#8217;m missing something &#8211; where did this file come from in the first place, that I can remove a line from it?</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=4524#respond' onclick='return addComment.moveForm( "div-comment-4524", "4524", "respond", "1157" )' aria-label='Reply to Russell Silva'>Reply</a></div>
+				</div>
+		<ul class="children">
+		<li class="comment odd alt depth-2 parent" id="comment-4696">
+				<div id="div-comment-4696" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/8613f1fca4a84c10c4cfd12a51cd4bc7?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8613f1fca4a84c10c4cfd12a51cd4bc7?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Cindy</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4696">
+			July 16, 2017 at 2:18 pm</a>		</div>
+
+		<p>I had the same issue Russell did. What I did was just create the blank file. So far seems to be working</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=4696#respond' onclick='return addComment.moveForm( "div-comment-4696", "4696", "respond", "1157" )' aria-label='Reply to Cindy'>Reply</a></div>
+				</div>
+		<ul class="children">
+		<li class="comment even depth-3" id="comment-4797">
+				<div id="div-comment-4797" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/fc8d3650f430b80d0dde5841429d9e08?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/fc8d3650f430b80d0dde5841429d9e08?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Dominic</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4797">
+			August 3, 2017 at 3:27 am</a>		</div>
+
+		<p>See the files here:<br />
+<a href="https://github.com/taniarascia/startjekyll" rel="nofollow">https://github.com/taniarascia/startjekyll</a></p>
+
+		
+				</div>
+		</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+		<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-4491">
+				<div id="div-comment-4491" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/e85b191e376733e823b83549d2243ebd?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/e85b191e376733e823b83549d2243ebd?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Dashiell Lumas</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4491">
+			June 21, 2017 at 2:05 pm</a>		</div>
+
+		<p>Great tutorial, just one minor error.</p>
+<p>Inside of index.md, you want to:<br />
+Change the layout:home<br />
+to<br />
+layout: default</p>
+<p>Thanks again. This was super helpful!</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=4491#respond' onclick='return addComment.moveForm( "div-comment-4491", "4491", "respond", "1157" )' aria-label='Reply to Dashiell Lumas'>Reply</a></div>
+				</div>
+		</li><!-- #comment-## -->
+		<li class="comment even thread-even depth-1" id="comment-4282">
+				<div id="div-comment-4282" class="comment-body">
+				<div class="comment-author vcard">
+			<img alt='' src='https://secure.gravatar.com/avatar/7b0cfb20bc263043cc5c0e17bcbb6081?s=45&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/7b0cfb20bc263043cc5c0e17bcbb6081?s=90&amp;d=mm&amp;r=g 2x' class='avatar avatar-45 photo' height='45' width='45' />			<cite class="fn">Cyril</cite> <span class="says">says:</span>		</div>
+		
+		<div class="comment-meta commentmetadata"><a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-2/#comment-4282">
+			June 3, 2017 at 5:36 pm</a>		</div>
+
+		<p>Hi Tania<br />
+layout is not inserting into the page. I get this &#8212; layout: default &#8212;<br />
+any idea ? </p>
+<p>many thanks</p>
+<p>Cyril</p>
+
+		<div class="reply"><a rel='nofollow' class='comment-reply-link' href='https://www.taniarascia.com/make-a-static-website-with-jekyll/?replytocom=4282#respond' onclick='return addComment.moveForm( "div-comment-4282", "4282", "respond", "1157" )' aria-label='Reply to Cyril'>Reply</a></div>
+				</div>
+		</li><!-- #comment-## -->
+			</ul>
+							<div class="comment-links">
+					<div class="pagination-left">
+						<a href="https://www.taniarascia.com/make-a-static-website-with-jekyll/comment-page-1/#comments" >&laquo; Older Comments</a>					</div>
+					<div class="pagination-right">
+											</div>
+				</div>
+				
+					</div>
+</section>
+<section class="newsletter">
+	<div class="small-container text-center">
+		<h2>Tania's List</h2>
+		<p>My tutorials, guides, and articles for <strong>web designers, developers, and autodidacts</strong>, sent out once a month or so. No bullshit, ads, or tricks.</p>
+		<div id="mc_embed_signup">
+			<form action="//taniarascia.us12.list-manage.com/subscribe/post?u=ec794fab6e35a491a001cc25d&amp;id=5276386071" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+				<label for="mce-EMAIL"><span class="screen-reader-text">Email</span></label><input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email address">
+				<div id="mce-responses" class="clear">
+					<div class="response" id="mce-error-response" style="display:none"></div>
+					<div class="response" id="mce-success-response" style="display:none"></div>
+				</div>
+				<div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_ec794fab6e35a491a001cc25d_5276386071" tabindex="-1" value=""></div>
+				<div class="clear"><button type="submit" name="subscribe" id="mc-embedded-subscribe" class="button"><i class="fa fa-arrow-right" aria-hidden="true"></i></button></div>
+			</form>
+		</div>
+	</div>
+</section>
+
+<footer class="footer">
+ <div class="small-container flex-container">
+	 <div class="footer-social">
+		 <p>I'm <strong><a href="https://www.taniarascia.com/me">Tania Rascia</a></strong>, a web designer/developer, autodidact, tech writer and problem solver. I love hiking, karaoke, recording music, and building communities. <strong><a href="https://www.taniarascia.com/contact">Say hello!</a></strong></p>
+	  <div class="social-icons">
+     <a href="https://www.taniarascia.com/feed"><i class="fa fa-rss fa-2x"></i></a>
+     <a href="https://twitter.com/taniarascia" target="_blank"><i class="fa fa-twitter fa-2x"></i></a>
+     <a href="https://github.com/taniarascia" target="_blank"><i class="fa fa-github fa-2x"></i></a>
+     <a href="https://stackoverflow.com/users/4541434/tania-rascia" target="_blank"><i class="fa fa-stack-overflow fa-2x"></i></a>
+     <a href="https://www.linkedin.com/in/taniarascia/" target="_blank"><i class="fa fa-linkedin-square fa-2x" aria-hidden="true"></i></a>
+    </div>
+    <p>Open source <a href="https://opensource.org/licenses/MIT">MIT</a>.</p>
+	 </div>
+	 <div class="footer-support">
+		 <p>My site is <strong class="pink">free</strong> – and free of ads, clickbait, popups, guest posts, and sponsored content. Has this site been valuable to you? Please consider <strong>donating</strong> so I can continue creating!</p>
+     <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+      <input type="hidden" name="cmd" value="_s-xclick">
+      <input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+      ">
+      <input type="submit" name="submit" alt="PayPal - The safer, easier way to pay online!" class="button secondary-button" value="Donate!">
+      <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+     </form>
+	 </div>
+	</div>
+</footer>
+	
+</main>
+
+<script style="display: none !important;">!function(e,t,r,n,c,a,l){function i(t,r){return r=e.createElement('div'),r.innerHTML='<a href="'+t.replace(/"/g,'&quot;')+'"></a>',r.childNodes[0].getAttribute('href')}function o(e,t,r,n){for(r='',n='0x'+e.substr(t,2)|0,t+=2;t<e.length;t+=2)r+=String.fromCharCode('0x'+e.substr(t,2)^n);return i(r)}try{for(c=e.getElementsByTagName('a'),l='/cdn-cgi/l/email-protection#',n=0;n<c.length;n++)try{(t=(a=c[n]).href.indexOf(l))>-1&&(a.href='mailto:'+o(a.href,t+l.length))}catch(e){}for(c=e.querySelectorAll('.__cf_email__'),n=0;n<c.length;n++)try{(a=c[n]).parentNode.replaceChild(e.createTextNode(o(a.getAttribute('data-cfemail'),0)),a)}catch(e){}}catch(e){}}(document);</script><script type='text/javascript'>
+/* <![CDATA[ */
+var PowerStatsParams = {"ajaxurl":"https:\/\/www.taniarascia.com\/wp-admin\/admin-ajax.php","ci":"YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6NDoicG9zdCI7czo4OiJjYXRlZ29yeSI7czoxOToiMyw3OCw2LDIsNCwyNiw3NSw3NCI7czoxMDoiY29udGVudF9pZCI7aToxMTU3O3M6NjoiYXV0aG9yIjtzOjg6ImhpLXRhbmlhIjt9.495d56dec49763267eeb1c83f1fd10cc"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='https://www.taniarascia.com/wp-content/plugins/wp-power-stats/wp-power-stats.js'></script>
+<script type='text/javascript' src='https://www.taniarascia.com/wp-includes/js/jquery/jquery.js'></script>
+<script type='text/javascript' src='https://www.taniarascia.com/wp-content/themes/oblate/js/prism.js'></script>
+<script type='text/javascript' src='https://www.taniarascia.com/wp-content/themes/oblate/js/script.js?06-06-2017&#038;ver=1.0.0'></script>
+<script type='text/javascript' src='https://www.taniarascia.com/wp-content/plugins/akismet/_inc/form.js'></script>
+	
+<script type="application/ld+json">
+{ "@context": "http://schema.org", 
+ "@type": "TechArticle",
+ "headline": "Make a Static Website with Jekyll",
+ "proficiencyLevel": "Beginner/intermediate",
+ "image": "https://www.taniarascia.com/wp-content/uploads/jekyll-2.png",
+   "author": {
+      "@type": "Person",
+      "name": "Tania Rascia"
+    },
+ "genre": "Front End &amp; Design, Popular, Tutorials, Web, ", 
+ "keywords": "git, jekyll, ruby, static site, ", 
+ "url": "https://www.taniarascia.com/make-a-static-website-with-jekyll/",
+ "datePublished": "2015-11-30",
+ "description": "A tutorial on how to install Jekyll (the static site generator) and create a simple theme for blog posts and regular pages. Written on a macOS environment."
+ }
+</script>	
+</body>
+
+</html>
