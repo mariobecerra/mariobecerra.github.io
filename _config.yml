@@ -1,0 +1,15 @@
+# Site Settings
+title: Mario Becerra
+email: mbecerracontreras@gmail.com
+description: >
+  Applied Mathematician - Data scientist - Computer scientist
+baseurl: ""
+url: "http://localhost:4000"
+linkedin_username:  mariobecerracontreras
+github_username:  mariobecerra
+# Build Settings
+sass:
+  sass_dir: _sass
+include: ['_pages']
+kramdown:
+  input: GFM
