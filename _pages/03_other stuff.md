@@ -4,7 +4,7 @@ title: Other stuff
 permalink: /other/
 ---
 
-# Some school projects:
+# Some school projects
 
 
 * <a href="../files/school_projects/MetAnExamen2.pdf">Twitter network analysis (May 2015)</a>: School project analyzing a social network created via RTs and replies in Twitter. Written in Spanish.
@@ -21,8 +21,14 @@ permalink: /other/
 
 * <a href="../files/school_projects/PageRank.pdf">Page Rank algorithm (May 2014)</a>: School project on the application of the PageRank algorithm in determining important nodes in highway networks, electricity networks and neurons of a worm. Written in Spanish.
 
+# Blogs I follow
 
-# Reading list:
+* <a href="https://www.r-bloggers.com">R-bloggers</a>
+* <a href="http://varianceexplained.org/">David Robinson</a>
+* <a href="https://juliagalef.com/">Julia Galef</a>
+* <a href="http://andrewgelman.com/">Andrew Gelman</a>
+
+# Reading list
 
 ### 2017
  
