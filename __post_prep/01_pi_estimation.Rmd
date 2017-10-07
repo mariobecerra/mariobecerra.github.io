@@ -1,7 +1,5 @@
 ---
-title: "Pi estimation using simulation"
 author: "Mario Becerra"
-date: "September 8, 2017"
 output: html_document
 ---
 
