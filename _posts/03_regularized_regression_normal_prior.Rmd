@@ -1,0 +1,138 @@
+---
+title: "Untitled"
+author: "Mario Becerra"
+date: "October 1, 2017"
+output: html_document
+---
+
+
+```{r}
+# https://stats.stackexchange.com/questions/163388/l2-regularization-is-equivalent-to-gaussian-prior
+# http://statweb.stanford.edu/~tibs/sta305files/Rudyregularization.pdf
+
+library(tidyverse)
+library(glmnet)
+library(R2jags)
+
+beta_1 = 2
+beta_2 = 7
+lambda = 5000
+
+dat <- tibble(x1 = runif(1000, -10, 10),
+              x2 = runif(1000, 10, 30)) %>% 
+  mutate(x1 = (x1 - mean(x1))/sd(x1),
+         x2 = (x2 - mean(x2))/sd(x2),
+         y = beta_1*x1 + beta_2*x2 + rnorm(1000, 0, 1))
+
+# dat %>% 
+#   ggplot(aes(x1, y)) +
+#   geom_point(size = 0.7, alpha = 0.5) 
+# 
+# dat %>% 
+#   ggplot(aes(x2, y)) +
+#   geom_point(size = 0.7, alpha = 0.5) 
+
+
+
+X <- cbind(dat$x1, dat$x2)
+XtX <- t(X) %*% X
+sum_xtx <- XtX + lambda*diag(2)
+Xty <- t(X) %*% dat$y
+beta_hat <- c(mean(dat$y), solve(sum_xtx, Xty))
+beta_hat
+
+# https://stats.stackexchange.com/questions/129179/why-is-glmnet-ridge-regression-giving-me-a-different-answer-than-manual-calculat
+mod_ridge <- glmnet(y = dat$y, x = cbind(dat$x1, dat$x2), 
+                    lambda = lambda*sd(dat$y)/nrow(dat), 
+                    alpha = 0,
+                    standardize = F)
+coef(mod_ridge)
+
+mod_string_1 <- "
+model
+{
+  #Likelihood
+  for (i in 1:length(y)) {
+    y[i] ~ dnorm(mu[i], lambda)
+    mu[i]<-beta[1]+beta[2]*x1[i] + beta[3]*x2[i]
+  }
+  #Priors 
+  beta[1] ~ dnorm(0, 1/10000) 
+  for (j in 2:3) { 
+    beta[j] ~ dnorm(0, lambda*5000) 
+  }
+  lambda ~ dgamma(0.001,0.001)
+  sigma = 1.0/sqrt(lambda)
+  #Prediction
+  for (i in 1:length(y)) { 
+    yf[i] ~ dnorm(mu[i], lambda) 
+  }
+}
+"
+
+jags_data <- as.list(dat)
+
+#-Defining inits-
+inits_1 <- function(){
+  list(beta = rep(0, 3),
+       yf = rep(0, nrow(dat)),
+       lambda = 1)
+}
+
+# Parameters to monitor
+jags_params_1 <- c("beta", "sigma", "yf")
+
+mod_jags_sims_1 <- jags(
+  jags_data,
+  inits_1,
+  jags_params_1,
+  model.file = textConnection(mod_string_1),
+  n.iter = 10000,
+  n.chains = 1,
+  n.burnin = 1000, 
+  n.thin = 1)
+
+simulaciones_1 <- as_tibble(mod_jags_sims_1$BUGSoutput$sims.array) %>% 
+  select(c(grep("beta", names(.)),
+           grep("sigma", names(.)))) %>% 
+  #set_names(make.names(names(.)))
+  set_names(c("beta_1", "beta_2", "beta_3", "sigma"))
+
+# simulaciones_1 %>% 
+#   mutate(ix = 1:nrow(.)) %>% 
+#   gather(param, value, beta_1:sigma) %>% 
+#   ggplot() + 
+#   geom_line(aes(ix, value), alpha = 0.8, size = 0.1) + 
+#   facet_wrap(~param, scales = 'free_y') +
+#   theme_bw()
+# 
+# simulaciones_1 %>% 
+#   mutate(ix = 1:nrow(.)) %>% 
+#   gather(param, value, beta_1:sigma) %>% 
+#   group_by(param) %>% 
+#   mutate(cum_mean = cumsum(value)/ix) %>% 
+#   ggplot() + 
+#   geom_line(aes(ix, cum_mean), alpha = 0.8, size = 0.5) + 
+#   facet_wrap(~param, scales = 'free_y') +
+#   theme_bw()
+# 
+# simulaciones_1 %>%
+#   gather(param, value, beta_1:sigma) %>% 
+#   ggplot(aes(x = value))+
+#   geom_histogram(aes(y=..density..),
+#                  colour = 'black', 
+#                  fill = 'white') +
+#   geom_density() +
+#   facet_wrap(~param, scales = 'free') +
+#   theme_bw()
+
+#Tabla resumen
+mod_jags_sims_1$BUGSoutput$summary %>% 
+  as.data.frame() %>% 
+  mutate(param = row.names(.)) %>% 
+  slice(c(grep(c("beta"), param),
+          grep(c("sigma"), param))) %>% 
+  select(c(8, 1, 3, 7))
+
+```
+
