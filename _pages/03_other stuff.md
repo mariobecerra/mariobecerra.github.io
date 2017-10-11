@@ -32,6 +32,7 @@ permalink: /other/
 
 ### 2017
  
+* "Pedro Páramo" by Juan Rulfo
 * "Fooled by Randomness" by Nassim Nicholas Taleb
 * "The Unbearable Lightness of Being" by Milan Kundera
 * "But I Survived" by Tadeusz Sobolewicz
@@ -45,13 +46,15 @@ permalink: /other/
  
 ### Previous years
  
-* "The Tales of Beedle the Bard" by J.K. Rowling
-* "Harry Potter and the Cursed Child - Parts One and Two" by John Tiffany
 * "The Long Tail: Why the Future of Business is Selling Less of More" by Chris Anderson
 * "The Lady Tasting Tea: How Statistics Revolutionized Science in the Twentieth Century" by David Salsburg
 * "The Joy of Pi" by David Blatner
 * "The Death of Ivan Ilych" by Leo Tolstoy
 * "Pulp" by Charles Bukowski
+* "The Picture of Dorian Gray" by Oscar Wilde
+* "The Old Man and the Sea" by Ernest Hemingway
+* "Brave New World" by Aldous Huxley
+* "Harry Potter and the Cursed Child - Parts One and Two" by John Tiffany
 * "The Number Devil: A Mathematical Adventure" by Hans Magnus Enzensberger
 * "Santa" by Federico Gamboa
 * "Niebla " by Miguel de Unamuno
@@ -79,7 +82,4 @@ permalink: /other/
 * "Diablo Guardián" by Xavier Velasco
 * "The Shadow of the Wind" by Carlos Ruiz Zafón
 * "The Millenium series" by Stieg Larsson
-* "The Picture of Dorian Gray" by Oscar Wilde
-* "The Old Man and the Sea" by Ernest Hemingway
-* "Brave New World" by Aldous Huxley
 * "The Fellowship of the Ring" by J.R.R. Tolkien
