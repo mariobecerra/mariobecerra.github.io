@@ -31,7 +31,8 @@ permalink: /other/
 # Reading list
 
 ### 2017
- 
+
+* "The Signal and the Noise" by Nate Silver 
 * "Pedro Páramo" by Juan Rulfo
 * "Fooled by Randomness" by Nassim Nicholas Taleb
 * "The Unbearable Lightness of Being" by Milan Kundera
