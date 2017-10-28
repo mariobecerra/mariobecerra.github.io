@@ -1,11 +1,13 @@
 ---
-title: "Coursera Capstone Project"
+# title: ""
 author: "Mario Becerra"
-date: "October 2017"
+# date: ""
 output: html_document
 ---
-  
-```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+
+In this document, I show a simple Bayesian linear regression model for applied mathematicians' salary. I compare the same model with two different priors on the coefficients: normal and Laplace.
+
+```{r setup, echo = T, message=FALSE, warning=FALSE}
 library(R2jags)
 library(tidyverse)
 library(GGally)
@@ -15,7 +17,7 @@ set.seed(124362)
 
 theme_set(theme_bw())
 
-opts_chunk$set(echo=FALSE, message=F, warning=FALSE, cache = T, eval = F)
+opts_chunk$set(echo = T, message=F, warning=FALSE, cache = T, eval = F)
 ```
 
 
@@ -59,8 +61,8 @@ dat %>%
 
 
 The data can be found in any of the following links:
-  
-  - http://www.stat.purdue.edu/~boli/stat512/datasets/CH06PR18.DAT
+
+- http://www.stat.purdue.edu/~boli/stat512/datasets/CH06PR18.DAT
 - http://www.stat.purdue.edu/~wsharaba/stat512/Datasets/ch06pr18.dat
 - http://www.stat.missouri.edu/~dsun/321/hw8.dat
 - http://allman.rhon.itam.mx/~lnieto/index_archivos/salarios.txt
@@ -74,6 +76,8 @@ We can see the relationship between the variables in the following plot.
 ```{r, cache=TRUE, eval = T}
 ggpairs(dat) 
 ```
+
+Salary has a positive correlation with the three covariates, although x3 seems to have a decreasing variance, while x1 and x2 seem to have a constant variance. We'll ignore this for now and assume that there's a linear relation with constant variance between the salary and the covariates.
 
 ### 1) Normal a priori distribution
 
@@ -89,8 +93,8 @@ $$
 for $i = 1, 2, ..., n$, $j = 1, ..., 4$, and $n = 24$. Where $\lambda$ is the precision, i.e., if $\sigma^2$ is the variance, then $\lambda = \frac{1}{\sigma^2}$. We''l use non-informative prior distributions, so $\lambda_j = 0.001$ for each $j = 1, ..., 4$, $a = 0.001$ and $b = 0.001$.
 
 We'll implement the model in JAGS. The description of the model is:
-  
-  ```{r, echo=T, eval = T}
+
+```{r, echo=T, eval = T}
 mod_string_1 <- "
 model
 {
@@ -150,44 +154,44 @@ We can see in the following plots the convergence for each parameter we're monit
 
 
 check_chains <- function(sims, var){
-sims <- sims %>% 
-select_(var) %>% 
-rename_("z" = var) %>% 
-mutate(ix = 1:nrow(.))
-
-g1 <- sims %>% 
-ggplot() + 
-geom_line(aes(ix, z), alpha = 0.9, size = 0.2)
-
-g2 <- sims %>% 
-ggplot(aes(z))+
-geom_histogram(aes(y=..density..),colour = 'black', fill = 'white') +
-geom_density() +
-geom_vline(xintercept = c(quantile(sims$z,0.025),
-quantile(sims$z,0.975),
-mean(sims$z)),
-size = 0.7,
-linetype = c('dotted','dotted','dashed')) +
-theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-g3 <- sims %>% 
-mutate(cum_mean = cumsum(z)/(1:length(z))) %>% 
-ggplot(aes(ix, cum_mean)) +
-geom_line() +
-theme_bw() +
-ylab("Cummulative mean")
-
-lag_max <- floor(+10*log(length(sims$z),10))
-acf_df <- tibble(Lag = 0:lag_max,
-ACF = drop(acf(sims$z, plot = FALSE)$acf))
-
-g4 <- acf_df %>% 
-ggplot(mapping = aes(x = Lag, y = ACF)) +
-geom_hline(aes(yintercept = 0)) +
-geom_segment(mapping = aes(xend = Lag, yend = 0)) +
-theme_bw()
-
-grid.arrange(g1, g2, g3, g4, ncol=2, nrow=2, top=var)
+  sims <- sims %>% 
+    select_(var) %>% 
+    rename_("z" = var) %>% 
+    mutate(ix = 1:nrow(.))
+  
+  g1 <- sims %>% 
+    ggplot() + 
+    geom_line(aes(ix, z), alpha = 0.9, size = 0.2)
+  
+  g2 <- sims %>% 
+    ggplot(aes(z))+
+    geom_histogram(aes(y=..density..),colour = 'black', fill = 'white') +
+    geom_density() +
+    geom_vline(xintercept = c(quantile(sims$z,0.025),
+                              quantile(sims$z,0.975),
+                              mean(sims$z)),
+               size = 0.7,
+               linetype = c('dotted','dotted','dashed')) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  g3 <- sims %>% 
+    mutate(cum_mean = cumsum(z)/(1:length(z))) %>% 
+    ggplot(aes(ix, cum_mean)) +
+    geom_line() +
+    theme_bw() +
+    ylab("Cummulative mean")
+  
+  lag_max <- floor(+10*log(length(sims$z),10))
+  acf_df <- tibble(Lag = 0:lag_max,
+                   ACF = drop(acf(sims$z, plot = FALSE)$acf))
+  
+  g4 <- acf_df %>% 
+    ggplot(mapping = aes(x = Lag, y = ACF)) +
+    geom_hline(aes(yintercept = 0)) +
+    geom_segment(mapping = aes(xend = Lag, yend = 0)) +
+    theme_bw()
+  
+  grid.arrange(g1, g2, g3, g4, ncol=2, nrow=2, top=var)
 }
 
 
@@ -196,13 +200,12 @@ grid.arrange(g1, g2, g3, g4, ncol=2, nrow=2, top=var)
 
 ```{r chain_plots_1, eval = T}
 simulations_1 <- as_tibble(mod_jags_sims_1$BUGSoutput$sims.array) %>% 
-select(c(grep("beta", names(.)),
-grep("sigma", names(.)))) %>% 
-#set_names(make.names(names(.)))
-set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
+  select(c(grep("beta", names(.)),
+           grep("sigma", names(.)))) %>% 
+  set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
 
 for(x in names(simulations_1)){
-check_chains(simulations_1, x)
+  check_chains(simulations_1, x)
 }
 
 ```
@@ -212,12 +215,12 @@ In this table we can see the mean value and some relevant quantiles of the poste
 ```{r, eval = T}
 # Summary table
 mod_jags_sims_1$BUGSoutput$summary %>% 
-as.data.frame() %>% 
-mutate(param = row.names(.)) %>% 
-slice(c(grep(c("beta"), param),
-grep(c("sigma"), param))) %>% 
-select(c(8, 1, 3, 7)) %>% 
-kable()
+  as.data.frame() %>% 
+  mutate(param = row.names(.)) %>% 
+  slice(c(grep(c("beta"), param),
+          grep(c("sigma"), param))) %>% 
+  select(c(8, 1, 3, 7)) %>% 
+  kable()
 
 
 ```
@@ -226,51 +229,46 @@ Instead of the 95\% posterior probability interval based on the quantiles, we ca
 
 ```{r, eval = T}
 lapply(names(simulations_1), function(x) {
-coda::HPDinterval(as.mcmc(simulations_1[,x])) %>% 
-as_tibble() %>% 
-mutate(param = x)
+  coda::HPDinterval(as.mcmc(simulations_1[,x])) %>% 
+    as_tibble() %>% 
+    mutate(param = x)
 }
 ) %>% 
-bind_rows() %>% 
-select(param, p_2.5 = lower, p_97.5 = upper) %>% 
-kable()
+  bind_rows() %>% 
+  select(param, p_2.5 = lower, p_97.5 = upper) %>% 
+  kable()
 ```
 
 And now we see the residuals of each of the 24 observations.
 
 ```{r, eval = T}
 param_means_1 <- simulations_1 %>% 
-select(grep("beta", names(.))) %>% 
-sapply(mean)
+  select(grep("beta", names(.))) %>% 
+  sapply(mean)
 
 X_1 <- dat %>% 
-mutate(x0 = 1) %>% 
-select(x0, x1, x2, x3) %>% 
-as.matrix()
+  mutate(x0 = 1) %>% 
+  select(x0, x1, x2, x3) %>% 
+  as.matrix()
 
 yhat_1 = drop(X_1 %*% param_means_1)
 
-# preds_1 <- tibble(y = dat$y,
-#                 yhat = yhat_1,
-#                 resid = y - yhat) %>% 
-#   mutate(ix = 1:nrow(.)) 
-
 preds_1 <- mod_jags_sims_1$BUGSoutput$sims.array %>% 
-as_tibble() %>% 
-select(grep("yf1", names(.))) %>% 
-apply(., 2, function(x){
-coda::HPDinterval(as.mcmc(x)) %>% 
-as_tibble()
-}) %>% 
-bind_rows() %>% 
-mutate(ix = 1:nrow(.),
-y = dat$y,
-yhat = yhat_1,
-resid = y - yhat)
+  as_tibble() %>% 
+  select(grep("yf1", names(.))) %>% 
+  apply(., 2, function(x){
+    coda::HPDinterval(as.mcmc(x)) %>% 
+      as_tibble()
+  }) %>% 
+  bind_rows() %>% 
+  mutate(ix = 1:nrow(.),
+         y = dat$y,
+         yhat = yhat_1,
+         resid = y - yhat)
 
 preds_1 %>%     
-ggplot() +
-geom_point(aes(ix, resid)) 
+  ggplot() +
+  geom_point(aes(ix, resid)) 
 
 ```
 
@@ -279,8 +277,8 @@ In the next plot we see the residuals against the adjusted value. We see no patt
 ```{r, eval = T}
 
 preds_1 %>% 
-ggplot() +
-geom_point(aes(yhat, resid)) 
+  ggplot() +
+  geom_point(aes(yhat, resid)) 
 
 ```
 
@@ -288,12 +286,12 @@ And finally, the observed value against the adjusted value, and the 95\% probabi
 
 ```{r, eval = T}
 preds_1 %>% 
-ggplot(aes(x = y)) +
-geom_point(aes(y = yhat)) +
-geom_segment(aes(xend = y, y = lower, yend = upper)) +
-geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) +
-xlab("Observed")+
-ylab("Estimated")
+  ggplot(aes(x = y)) +
+  geom_point(aes(y = yhat)) +
+  geom_segment(aes(xend = y, y = lower, yend = upper)) +
+  geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) +
+  xlab("Observed")+
+  ylab("Estimated")
 ```
 
 Now, let's suppose we have three new employees with the following vectors: $x_{1F}^T = (5.4, 17, 6)$, $x_{2F}^T = (6.2, 12, 5.8)$ and $x_{3F}^T = (6.4, 21, 6.1)$ and we want an estimate of how much they would earn based on these vectors. 
@@ -328,12 +326,6 @@ hdi_preds_f_1 <- tibble(emp = names(final_predictives_xf_1),
       }) %>% 
       bind_rows()
   )
-
-# final_predictives_xf_1 %>% 
-#   gather(employee, salary) %>% 
-#   ggplot() + 
-#   geom_histogram(aes(x = salary, y = ..density..)) +
-#   facet_wrap(~employee) 
 
 hdi_preds_f_1 %>% 
   kable()
@@ -411,23 +403,23 @@ We run a chain of 50,000 iterations and a warm-up of 5000. In addition, we selec
 
 #-Defining inits
 inits_2 <- function(){
-list(beta = rep(0, 4),
-yf1 = rep(0, nrow(dat)),
-lambda = 1)
+  list(beta = rep(0, 4),
+       yf1 = rep(0, nrow(dat)),
+       lambda = 1)
 }
 
 # Parameters to monitor
 jags_params_2 <- c("beta", "sigma", "yf1")
 
 mod_jags_sims_2 <- jags(
-jags_data,
-inits_2,
-jags_params_2,
-model.file = textConnection(mod_string_2),
-n.iter = 100000,
-n.chains = 1,
-n.burnin = 5000, 
-n.thin = 5)
+  jags_data,
+  inits_2,
+  jags_params_2,
+  model.file = textConnection(mod_string_2),
+  n.iter = 100000,
+  n.chains = 1,
+  n.burnin = 5000, 
+  n.thin = 5)
 
 ```
 
@@ -436,16 +428,15 @@ We can do convergence analysis and see that everything looks good:
 ```{r, eval = T}
 
 simulations_2 <- as_tibble(mod_jags_sims_2$BUGSoutput$sims.array) %>% 
-select(c(grep("beta", names(.)),
-grep("sigma", names(.)))) %>% 
-#set_names(make.names(names(.)))
-set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
+  select(c(grep("beta", names(.)),
+           grep("sigma", names(.)))) %>% 
+  set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
 
 ```
 
 ```{r laplace_convergence_plots, eval = T}
 for(x in names(simulations_2)){
-check_chains(simulations_2, x)
+  check_chains(simulations_2, x)
 }
 
 ```
@@ -457,12 +448,12 @@ We can see again the mean value and some relevant quantiles of the posterior dis
 ```{r, eval = T}
 #Tabla resumen
 mod_jags_sims_2$BUGSoutput$summary %>% 
-as.data.frame() %>% 
-mutate(param = row.names(.)) %>% 
-slice(c(grep(c("beta"), param),
-grep(c("sigma"), param))) %>% 
-select(c(8, 1, 3, 7)) %>% 
-kable()
+  as.data.frame() %>% 
+  mutate(param = row.names(.)) %>% 
+  slice(c(grep(c("beta"), param),
+          grep(c("sigma"), param))) %>% 
+  select(c(8, 1, 3, 7)) %>% 
+  kable()
 
 ```
 
@@ -470,47 +461,47 @@ The 95\% probability HDIs:
 
 ```{r, eval = T}
 lapply(names(simulations_2), function(x) {
-coda::HPDinterval(as.mcmc(simulations_2[,x])) %>% 
-as_tibble() %>% 
-mutate(param = x)
+  coda::HPDinterval(as.mcmc(simulations_2[,x])) %>% 
+    as_tibble() %>% 
+    mutate(param = x)
 }
 ) %>% 
-bind_rows() %>% 
-select(param, p_2.5 = lower, p_97.5 = upper) %>% 
-kable()
+  bind_rows() %>% 
+  select(param, p_2.5 = lower, p_97.5 = upper) %>% 
+  kable()
 ```
 
 Residuals of the 24 observations:
 
 ```{r, eval = T}
 param_means_2 <- simulations_2 %>% 
-select(grep("beta", names(.))) %>% 
-sapply(mean)
+  select(grep("beta", names(.))) %>% 
+  sapply(mean)
 
 X_2 <- dat %>% 
-mutate(x0 = 1) %>% 
-select(x0, x1, x2, x3) %>% 
-as.matrix()
+  mutate(x0 = 1) %>% 
+  select(x0, x1, x2, x3) %>% 
+  as.matrix()
 
 yhat_2 = drop(X_2 %*% param_means_2)
 
 
 preds_2 <- mod_jags_sims_2$BUGSoutput$sims.array %>% 
-as_tibble() %>% 
-select(grep("yf1", names(.))) %>% 
-apply(., 2, function(x){
-coda::HPDinterval(as.mcmc(x)) %>% 
-as_tibble()
-}) %>% 
-bind_rows() %>% 
-mutate(ix = 1:nrow(.),
-y = dat$y,
-yhat = yhat_2,
-resid = y - yhat)
+  as_tibble() %>% 
+  select(grep("yf1", names(.))) %>% 
+  apply(., 2, function(x){
+    coda::HPDinterval(as.mcmc(x)) %>% 
+      as_tibble()
+  }) %>% 
+  bind_rows() %>% 
+  mutate(ix = 1:nrow(.),
+         y = dat$y,
+         yhat = yhat_2,
+         resid = y - yhat)
 
 preds_2 %>%     
-ggplot() +
-geom_point(aes(ix, resid))
+  ggplot() +
+  geom_point(aes(ix, resid))
 
 ```
 
@@ -518,8 +509,8 @@ Residuals against adjusted values. Once again, looks good because we have no pat
 
 ```{r, eval = T}
 preds_2 %>% 
-ggplot() +
-geom_point(aes(yhat, resid))
+  ggplot() +
+  geom_point(aes(yhat, resid))
 
 ```
 
@@ -528,10 +519,10 @@ Finally, the observed value against the adjusted value, and the 95\% probability
 ```{r, eval = T}
 
 preds_2 %>% 
-ggplot(aes(x = y)) +
-geom_point(aes(y = yhat)) +
-geom_segment(aes(xend = y, y = lower, yend = upper)) +
-geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) 
+  ggplot(aes(x = y)) +
+  geom_point(aes(y = yhat)) +
+  geom_segment(aes(xend = y, y = lower, yend = upper)) +
+  geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) 
 ```
 
 Once again, for the three new employees we first show a table with a point estimate (mean of the posterior distribution) and their corresponding 95\% HDI. We further show the final predictive distributions with the point estimates and HDIs.
@@ -542,53 +533,53 @@ x2f = c(6.2, 12, 5.8)
 x3f = c(6.4, 21, 6.1)
 
 xf <- cbind(rep(1, 3),
-rbind(x1f, x2f, x3f))
+            rbind(x1f, x2f, x3f))
 ```
 
 
 ```{r final_predictives_2, fig.asp = 0.5, eval = T}
 final_predictives_xf_2 <- apply(xf, 1, function(x){
-mu_yf <- drop(as.matrix(select(simulations_2, -sigma)) %*% xf[1,])
-yf <- rnorm(nrow(simulations_2), mu_yf, simulations_2$sigma)
-return(yf)
+  mu_yf <- drop(as.matrix(select(simulations_2, -sigma)) %*% xf[1,])
+  yf <- rnorm(nrow(simulations_2), mu_yf, simulations_2$sigma)
+  return(yf)
 }) %>% 
-as_tibble()
+  as_tibble()
 
 hdi_preds_f_2 <- tibble(emp = names(final_predictives_xf_2),
-point_est = colMeans(final_predictives_xf_2)) %>% 
-bind_cols(
-final_predictives_xf_2 %>% 
-apply(., 2, function(x){
-coda::HPDinterval(as.mcmc(x)) %>% 
-as_tibble()
-}) %>% 
-bind_rows()
-)
+                        point_est = colMeans(final_predictives_xf_2)) %>% 
+  bind_cols(
+    final_predictives_xf_2 %>% 
+      apply(., 2, function(x){
+        coda::HPDinterval(as.mcmc(x)) %>% 
+          as_tibble()
+      }) %>% 
+      bind_rows()
+  )
 
 hdi_preds_f_2 %>% 
-kable()
+  kable()
 
 
 plots_2 <- lapply(names(final_predictives_xf_2), function(x) {
-intercepts <- hdi_preds_f_2 %>% 
-filter(emp == x)
-
-gg <- final_predictives_xf_2 %>% 
-select("value" = x) %>% 
-ggplot(aes(x = value)) +
-geom_histogram(aes(y=..density..),
-colour = 'black', 
-fill = 'white') +
-geom_density() +
-geom_vline(aes(xintercept = intercepts$point_est), 
-linetype = 'dashed') +
-geom_vline(aes(xintercept = intercepts$upper), 
-linetype = 'dotted') +
-geom_vline(aes(xintercept = intercepts$lower), 
-linetype = 'dotted')  +
-ggtitle(x)
-
-return(gg)
+  intercepts <- hdi_preds_f_2 %>% 
+    filter(emp == x)
+  
+  gg <- final_predictives_xf_2 %>% 
+    select("value" = x) %>% 
+    ggplot(aes(x = value)) +
+    geom_histogram(aes(y=..density..),
+                   colour = 'black', 
+                   fill = 'white') +
+    geom_density() +
+    geom_vline(aes(xintercept = intercepts$point_est), 
+               linetype = 'dashed') +
+    geom_vline(aes(xintercept = intercepts$upper), 
+               linetype = 'dotted') +
+    geom_vline(aes(xintercept = intercepts$lower), 
+               linetype = 'dotted')  +
+    ggtitle(x)
+  
+  return(gg)
 })
 
 do.call("grid.arrange", c(plots_2, ncol=3))
@@ -602,10 +593,10 @@ The first model (with the normal priors) had a DIC of `r mod_jags_sims_1$BUGSout
 ```{r, eval = T}
 
 tibble(
-param = c(paste0("beta_", 1:4)),
-Normal = param_means_1,
-Laplace = param_means_2) %>% 
-kable()
+  param = c(paste0("beta_", 1:4)),
+  Normal = param_means_1,
+  Laplace = param_means_2) %>% 
+  kable()
 ```
 
 We can see that the're very similar, so the prior distribution didn't have much effect on the results.
