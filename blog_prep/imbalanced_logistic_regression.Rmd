@@ -1,7 +1,5 @@
 ---
-title: "AWS test"
 author: "Mario Becerra"
-date: "October 2017"
 output: pdf_document
 ---
 
