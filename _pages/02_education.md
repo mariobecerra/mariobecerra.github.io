@@ -20,7 +20,9 @@ permalink: /education/
   - Computer architecture<br>
   - Compiler design<br>
 
-  <br><br><br>
+Note: Took around 70% of the courses in the <a href="http://mcienciadatos.itam.mx"><b>Data Science master's program</b></a> at ITAM.
+
+<br>
 
 <a href="http://matematicas.itam.mx"><b>Applied Mathematics BSc</b></a> (2010 - 2015)
   <br><br>
