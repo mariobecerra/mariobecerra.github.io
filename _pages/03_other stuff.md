@@ -27,6 +27,8 @@ permalink: /other/
 * <a href="http://varianceexplained.org/">David Robinson</a>
 * <a href="https://juliagalef.com/">Julia Galef</a>
 * <a href="http://andrewgelman.com/">Andrew Gelman</a>
+* <a href="https://www.johndcook.com/blog/">John D. Cook</a>
+
 
 # Reading list
 
