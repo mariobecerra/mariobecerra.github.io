@@ -427,52 +427,6 @@ mod_jags_sims_1$BUGSoutput$summary %&gt;%
 </tr>
 </tbody>
 </table>
-<p>Instead of the 95% posterior probability interval based on the quantiles, we can find the Highest Density Interval (HDI), that is usually smaller than the quantile-based interval. In the following table we see the 95% probability posterior HDIs:</p>
-<pre class="r"><code>lapply(names(simulations_1), function(x) {
-  coda::HPDinterval(as.mcmc(simulations_1[,x])) %&gt;% 
-    as_tibble() %&gt;% 
-    mutate(param = x)
-}
-) %&gt;% 
-  bind_rows() %&gt;% 
-  select(param, p_2.5 = lower, p_97.5 = upper) %&gt;% 
-  kable()</code></pre>
-<table>
-<thead>
-<tr class="header">
-<th align="left">param</th>
-<th align="right">p_2.5</th>
-<th align="right">p_97.5</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">beta_1</td>
-<td align="right">13.6011967</td>
-<td align="right">21.9063601</td>
-</tr>
-<tr class="even">
-<td align="left">beta_2</td>
-<td align="right">0.4238821</td>
-<td align="right">1.7946586</td>
-</tr>
-<tr class="odd">
-<td align="left">beta_3</td>
-<td align="right">0.2431402</td>
-<td align="right">0.3976051</td>
-</tr>
-<tr class="even">
-<td align="left">beta_4</td>
-<td align="right">0.6724594</td>
-<td align="right">1.9123507</td>
-</tr>
-<tr class="odd">
-<td align="left">sigma</td>
-<td align="right">1.2714134</td>
-<td align="right">2.4161847</td>
-</tr>
-</tbody>
-</table>
 <p>And now we see the residuals of each of the 24 observations.</p>
 <pre class="r"><code>param_means_1 &lt;- simulations_1 %&gt;% 
   select(grep(&quot;beta&quot;, names(.))) %&gt;% 
@@ -688,52 +642,6 @@ mod_jags_sims_2$BUGSoutput$summary %&gt;%
 <td align="right">1.8216127</td>
 <td align="right">1.3391774</td>
 <td align="right">2.5189119</td>
-</tr>
-</tbody>
-</table>
-<p>The 95% probability HDIs:</p>
-<pre class="r"><code>lapply(names(simulations_2), function(x) {
-  coda::HPDinterval(as.mcmc(simulations_2[,x])) %&gt;% 
-    as_tibble() %&gt;% 
-    mutate(param = x)
-}
-) %&gt;% 
-  bind_rows() %&gt;% 
-  select(param, p_2.5 = lower, p_97.5 = upper) %&gt;% 
-  kable()</code></pre>
-<table>
-<thead>
-<tr class="header">
-<th align="left">param</th>
-<th align="right">p_2.5</th>
-<th align="right">p_97.5</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">beta_1</td>
-<td align="right">13.7398039</td>
-<td align="right">21.9487088</td>
-</tr>
-<tr class="even">
-<td align="left">beta_2</td>
-<td align="right">0.4091427</td>
-<td align="right">1.7555794</td>
-</tr>
-<tr class="odd">
-<td align="left">beta_3</td>
-<td align="right">0.2454399</td>
-<td align="right">0.4003703</td>
-</tr>
-<tr class="even">
-<td align="left">beta_4</td>
-<td align="right">0.6691408</td>
-<td align="right">1.9009269</td>
-</tr>
-<tr class="odd">
-<td align="left">sigma</td>
-<td align="right">1.2624487</td>
-<td align="right">2.4037598</td>
 </tr>
 </tbody>
 </table>
