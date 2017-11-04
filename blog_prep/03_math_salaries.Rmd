@@ -225,20 +225,6 @@ mod_jags_sims_1$BUGSoutput$summary %>%
 
 ```
 
-Instead of the 95\% posterior probability interval based on the quantiles, we can find the Highest Density Interval (HDI), that is usually smaller than the quantile-based interval. In the following table we see the 95\% probability posterior HDIs:
-
-```{r, eval = T}
-lapply(names(simulations_1), function(x) {
-  coda::HPDinterval(as.mcmc(simulations_1[,x])) %>% 
-    as_tibble() %>% 
-    mutate(param = x)
-}
-) %>% 
-  bind_rows() %>% 
-  select(param, p_2.5 = lower, p_97.5 = upper) %>% 
-  kable()
-```
-
 And now we see the residuals of each of the 24 observations.
 
 ```{r, eval = T}
@@ -455,20 +441,6 @@ mod_jags_sims_2$BUGSoutput$summary %>%
   select(c(8, 1, 3, 7)) %>% 
   kable()
 
-```
-
-The 95\% probability HDIs:
-
-```{r, eval = T}
-lapply(names(simulations_2), function(x) {
-  coda::HPDinterval(as.mcmc(simulations_2[,x])) %>% 
-    as_tibble() %>% 
-    mutate(param = x)
-}
-) %>% 
-  bind_rows() %>% 
-  select(param, p_2.5 = lower, p_97.5 = upper) %>% 
-  kable()
 ```
 
 Residuals of the 24 observations:
