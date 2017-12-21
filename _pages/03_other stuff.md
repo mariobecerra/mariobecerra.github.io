@@ -6,6 +6,8 @@ permalink: /other/
 
 # Some school projects
 
+* <a href="../files/school_projects/GLM_Becerra_Lopez.pdf">Modeling house prices in NYC with a Bayesian hierarchical model (December 2017)</a>: Final project for my advanced regression class. Written in Spanish.
+
 * <a href="../files/school_projects/spark_survey.pdf">On improving Apache Spark's performance: a survey (December 2017)</a>: Survey paper for my Advanced Operating Systems class.
 
 * <a href="../files/school_projects/MetAnExamen2.pdf">Twitter network analysis (May 2015)</a>: School project analyzing a social network created via RTs and replies in Twitter. Written in Spanish.
