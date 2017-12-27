@@ -37,6 +37,8 @@ permalink: /other/
 
 ### 2017
 
+
+* "The Girl in the Spider's Web" by David Lagercrantz 
 * "The Signal and the Noise" by Nate Silver 
 * "Pedro Páramo" by Juan Rulfo
 * "Fooled by Randomness" by Nassim Nicholas Taleb
