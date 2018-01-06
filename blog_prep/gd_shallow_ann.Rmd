@@ -1,0 +1,17 @@
+---
+#title: "Untitled"
+author: "Mario Becerra"
+date: January 2018
+output: html_document
+---
+
+In this post, I show the implementation of gradient descent in Rcpp for shallow artificial neural networks (ANNs) used for classification. [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) is an R package that provides integration between R and C++.
+
+# Brief introduction to ANNs
+
+The type of ANN used in this post is called a feedforward neural network or multilayer perceptron (MLP). These models are basically a composition of non-linear functions of the data, i.e., $f^{(1)}(f^{(2)}(f^{(3)}(x)))$, where $f^{(1)}$ is the first layer, $f^{(2)}$ the second layer, and etc. In this post, I call them *shallow* because they have only one hidden layer (two layers in total), in contrast to the deep models used in deep learning.
+
+The type of problem considered in this post is a binary classification problem, so we consider a data matrix $X \in \mathbb{R}^{m \times n_x}$ and a response variable $y \in \{0,1\}^m$. Let $p_k$ be the probability of an observation $x_k \in \mathbb{R}^{n_x}$ of being 1. The single layer feedforward ANN models this quantity as $\hat{p_k} = \sigma(\beta_0 + \sum_{i = 1}^q \beta_i a_i^{(k)})$ with $a_i^{(k)} = \sigma(\theta_0^{(i)} + \sum_{l = 1}^{n_x} \theta_l^{(i)} x_l^{(k)})$. (check this last one)
+
+
+
