@@ -37,6 +37,9 @@ permalink: /other/
 
 ### 2017
 
+* "The Girl Who Takes an Eye for an Eye" by David Lagercrantz
+* "Introduction to the history of philosophy" by Ramón Xirau
+* "The Girl in the Spider's Web" by David Lagercrantz 
 * "The Signal and the Noise" by Nate Silver 
 * "Pedro Páramo" by Juan Rulfo
 * "Fooled by Randomness" by Nassim Nicholas Taleb
@@ -87,5 +90,5 @@ permalink: /other/
 * "Relato de un náufrago" by Gabriel García Márquez
 * "Diablo Guardián" by Xavier Velasco
 * "The Shadow of the Wind" by Carlos Ruiz Zafón
-* "The Millenium series" by Stieg Larsson
+* "The Millennium series" by Stieg Larsson
 * "The Fellowship of the Ring" by J.R.R. Tolkien
