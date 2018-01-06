@@ -11,7 +11,19 @@ In this post, I show the implementation of gradient descent in Rcpp for shallow 
 
 The type of ANN used in this post is called a feedforward neural network or multilayer perceptron (MLP). These models are basically a composition of non-linear functions of the data, i.e., $f^{(1)}(f^{(2)}(f^{(3)}(x)))$, where $f^{(1)}$ is the first layer, $f^{(2)}$ the second layer, and etc. In this post, I call them *shallow* because they have only one hidden layer (two layers in total), in contrast to the deep models used in deep learning.
 
-The type of problem considered in this post is a binary classification problem, so we consider a data matrix $X \in \mathbb{R}^{m \times n_x}$ and a response variable $y \in \{0,1\}^m$. Let $p_k$ be the probability of an observation $x_k \in \mathbb{R}^{n_x}$ of being 1. The single layer feedforward ANN models this quantity as $\hat{p_k} = \sigma(\beta_0 + \sum_{i = 1}^q \beta_i a_i^{(k)})$ with $a_i^{(k)} = \sigma(\theta_0^{(i)} + \sum_{l = 1}^{n_x} \theta_l^{(i)} x_l^{(k)})$. (check this last one)
+The type of problem considered in this post is a binary classification problem, so we consider a data matrix $X \in \mathbb{R}^{m \times n_x}$ and a response variable $y \in \{0,1\}^m$. Let $p_k$ be the probability of an observation $x_k \in \mathbb{R}^{n_x}$ of being 1. The single layer feedforward ANN models this quantity as $\hat{p_k} = \sigma(\beta_0 + \sum_{i = 1}^q \beta_i a_i^{(k)})$ with $a_i^{(k)} = \sigma(\theta_0^{(i)} + \sum_{l = 1}^{n_x} \theta_l^{(i)} x_l^{(k)})$, and $\sigma(x)$ is a non-linear function. Common choices of $\sigma(x)$ are the logistic function, $\sigma(x) = (1 + e^{-x})^{-1}$, and $\sigma(x) = \mathrm{tanh}(x)$. The $x$ is called the input layer, the $a_i^{(k)}$ is called the hidden layer, and the $\hat{p_k}$ is called the output layer.
+
+# Gradient descent
+
+We want to find parameters $\theta_l^{(j)}$ and $\beta_j$ for $l = 1, ..., n_x$ and $j = 1, ..., q$ that minimize a certain loss function. Since we are working on a binary classification problem, a suitable loss function is the sometimes called cross-entropy loss or deviance loss:
+
+$$
+  L(\theta, \beta) = \sum_{k = 1}^m \left[ -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})) \right].
+$$
+
+
+
+
 
 
 
