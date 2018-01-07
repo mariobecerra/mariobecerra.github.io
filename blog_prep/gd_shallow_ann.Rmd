@@ -1,9 +1,17 @@
 ---
 #title: "Untitled"
 author: "Mario Becerra"
-date: January 2018
+date: "January 2018"
 output: html_document
 ---
+
+```{r setup, echo = F, message = FALSE, warning = FALSE}
+library(knitr)
+library(tidyverse)
+theme_set(theme_bw())
+opts_chunk$set(echo = T, message=F, warning=FALSE, cache = T, eval = F)
+```
+
 
 In this post, I show the implementation of gradient descent in Rcpp for shallow artificial neural networks (ANNs) used for classification. [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) is an R package that provides integration between R and C++.
 
@@ -15,16 +23,18 @@ The type of problem considered in this post is a binary classification problem, 
 
 # Gradient descent
 
+### Partial derivatives
+
 We want to find parameters $\theta_l^{(j)}$ and $\beta_j$ for $l = 1, ..., n_x$ and $j = 1, ..., q$ that minimize a certain loss function. Since we are working on a binary classification problem, a suitable loss function is the sometimes called cross-entropy loss or deviance loss:
 
 $$
-  \mathcal{L}(\theta, \beta) = \frac{1}{m} \sum_{k = 1}^m \left[ -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})) \right].
+  \mathcal{L}(\theta, \beta) = \frac{1}{m} \sum_{k = 1}^m \left[ -(y^{(k)} \mathrm{log}(\hat{p_k}) + (1 - y^{(k)}) \mathrm{log}(1 - \hat{p_k})) \right].
 $$
 
 Now, let's rewrite de loss function in terms of another function $\mathcal{l_k}$, defined as
 
 $$
-  \mathcal{l_k}(\theta, \beta) = -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})),
+  \mathcal{l_k}(\theta, \beta) = -(y^{(k)} \mathrm{log}(\hat{p_k}) + (1 - y^{(k)}) \mathrm{log}(1 - \hat{p_k})),
 $$
 
 such that 
@@ -35,12 +45,298 @@ $$
 
 To do gradient descent, we need to find the partial derivative of $\mathcal{L}$ with respect to each parameter. We first take the partial derivative with respect to $\mathcal{l_k}$ and then sum them and divide them by $m$ to have the partial derivative with respect to $\mathcal{L}$.
 
-First, we go with the $\beta$ parameters. For each $l \in \left\{1, ..., q \right\}$, we have that according to the chain rule
+First, we go with the $\beta$ parameters. For each $l \in \left\{0, ..., q \right\}$, we have that according to the chain rule
 
 $$
   \frac{\partial \mathcal{l_k}}{\partial \beta_l} = \frac{\partial \mathcal{l_k}}{\partial p_k} \frac{\partial \mathcal{p_k}}{\partial w_k} \frac{\partial \mathcal{w_k}}{\partial \beta_l}
 $$
 
-with $w_k$ defined as $\sum_{l = 1}^q \beta_l a_l^{(k)}$, and $a_l^{(k)} = \sigma(\sum_{i = 1}^{n_x} \theta_l^{(i)} x_i^{(k)})$.
+with $w_k = \beta_0 +  \sum_{l = 1}^q \beta_l a_l^{(k)}$. Then we have that
+
+$$
+  \frac{\partial \mathcal{l_k}}{\partial \beta_l} = 
+  \left[ \frac{1 - y^{(k)}}{1 - \hat{p_k}} - \frac{y^{(k)}}{\hat{p_k}} \right] 
+  \left[\sigma(w_k) ( 1 - \sigma(w_k)) \right] 
+  \left[ a_l^{(k)} \right] = 
+  (p_k - y^{(k)}) a_l^{(k)},
+$$
+
+and the special case of $\beta_0$, which happens to be
+
+$$  
+  \frac{\partial \mathcal{l_k}}{\partial \beta_0} = p_k - y^{(k)}.
+$$
+
+And for the $\theta$ parameters, for each $n = 1, ..., n_x$ and $l = 1, ..., q$ we have the following:
+
+$$
+  \frac{\partial \mathcal{l_k}}{\partial \theta_l^{(n)}} = 
+  \frac{\partial \mathcal{l_k}}{\partial p_k} 
+  \frac{\partial p_k}{\partial w_k} 
+  \frac{\partial w_k}{\partial a_l^{(k)}} 
+  \frac{\partial a_l^{(k)}}{\partial z_l^{(k)}} 
+  \frac{\partial z_l^{(k)}}{\partial \theta_l^{(n)}},
+$$
+
+with $z_l^{(k)} = \sum_{i = 1}^{n_x} \theta_l^{(i)} x_i^{(k)}$. So, 
+
+$$
+  \frac{\partial \mathcal{l_k}}{\partial \theta_l^{(n)}} = 
+  \left[ \frac{1 - y^{(k)}}{1 - \hat{p_k}} - \frac{y^{(k)}}{\hat{p_k}} \right] 
+  \left[\sigma(w_k) ( 1 - \sigma(w_k)) \right] 
+  \left[\beta_l \right] 
+  \left[ \sigma(z_l^{(k)}) \left(1 - \sigma(z_l^{(k)}) \right) \right] 
+  \left[ x_n^{(k)} \right]
+$$
+
+Simplifying,
+
+$$
+  \frac{\partial \mathcal{l_k}}{\partial \theta_l^{(n)}} = 
+  \left[ p_k - y^{(k)} \right] \left[ a_l^{(k)} (1 - a_l^{(k)}) \right] \beta_l x_n^{(k)}.
+$$
+
+Then we have that 
+
+$$
+  \frac{\partial \mathcal{L}}{\partial \beta_l} = 
+  \frac{1}{m} \sum_{k = 1}^m \frac{\partial \mathcal{l_k}}{\partial \beta_l} =
+  \frac{1}{m} \sum_{k = 1}^m (p_k - y^{(k)}) a_l^{(k)}
+$$
+and
+
+$$
+  \frac{\partial \mathcal{L}}{\partial \theta_l^{(n)}} = 
+  \frac{1}{m} \sum_{k = 1}^m \frac{\partial \mathcal{l_k}}{\partial \theta_l^{(n)}} =
+  \frac{1}{m} \sum_{k = 1}^m \left[ p_k - y^{(k)} \right] \left[ a_l^{(k)} (1 - a_l^{(k)}) \right] \beta_l x_n^{(k)}.
+$$
+
+### Algorithm
+
+So, in order to do the gradient descent algorithm, we need to have an initial value for $\theta$ and $\beta$, and then update in the direction that the gradient dictates. So, for each iteration $i = 1, ..., n_{\mathrm{max}}$, we update in the following way:
+
+$$
+  \beta_i = \beta_{i-1} - \alpha \nabla_{\beta} \mathcal{L(\theta_{i-1}, \beta_{i-1})}
+$$
+
+$$
+  \theta_i = \theta_{i-1} - \alpha \nabla_{\theta} \mathcal{L(\theta_{i-1}, \beta_{i-1})}
+$$
+
+
+where $\nabla_{\beta} \mathcal{L(\theta_{i-1}, \beta_{i-1})}$ denotes the gradient vector of the loss function with respect to $\beta$, that is 
+
+$$
+  \nabla_{\beta} \mathcal{L(\theta_{i-1}, \beta_{i-1})} = 
+  \left( \frac{\partial \mathcal{L}}{\partial \beta_0}, 
+         \frac{\partial \mathcal{L}}{\partial \beta_1},
+         ...,
+         \frac{\partial \mathcal{L}}{\partial \beta_q}
+         \right)^T
+$$
+
+and
+
+$$
+  \nabla_{\theta} \mathcal{L(\theta_{i-1}, \beta_{i-1})} = 
+  \left( \frac{\partial \mathcal{L}}{\partial \theta_0^{(0)}}, 
+         \frac{\partial \mathcal{L}}{\partial \theta_0^{(1)}},
+         ...,
+         \frac{\partial \mathcal{L}}{\partial \theta_0^{(n_x)}},
+         \frac{\partial \mathcal{L}}{\partial \theta_1^{(0)}},
+         \frac{\partial \mathcal{L}}{\partial \theta_1^{(1)}},
+         ...,
+         \frac{\partial \mathcal{L}}{\partial \theta_q^{(n_x)}}
+         \right)^T.
+$$
+
+The parameter $\alpha$ is usually small, such as $0.01$, but there are several ways to choose it. One way to choose it is by line search, where we start with a relatively large value of $\alpha$ (such as 1) and iteratively make it smaller until a certain amount of the loss function decreases. In this exercise, we will keep a fixed value for all iterations.
+
+The gradient descent algorithm usually stops after a certain number of iterations ($n_{\mathrm{max}}$), or when the norm of the gradients is very close to 0, or when the change in the norm of the parameters is under a certain threshold close to 0. 
+
+### R code
+
+First, we write an Rcpp function that computes the gradient given the data $X$, the current values of $\beta_i$ and $\theta_i$, the response variable values $y$, and the vector of computed probabilities $\hat{p}$ given $\beta_i$ and $\theta_i$. This function returns a list with the value of the gradients at that point.
+
+```{r}
+# The X matrix is assumed to have a column vector of 1s
+
+Rcpp::cppFunction(
+" List compute_gradient(NumericMatrix X, 
+                        NumericVector p_hat, 
+                        NumericVector y, 
+                        NumericVector beta,
+                        NumericMatrix A) {
+    int q = beta.size() - 1, nx = X.ncol(), m = X.nrow();
+    
+    NumericVector dL_dbeta(q+1);
+    NumericMatrix dL_dtheta(nx, q);
+    double dbeta;
+    double pk_minus_yk;
+    double sum_beta0;
+    double sum_theta;
+    double sum_beta;
+
+    for(int l = 0; l < q; l++){
+      for(int n = 0; n < nx; n++){
+
+        sum_theta = 0;
+        sum_beta = 0;
+        sum_beta0 = 0;
+        
+        for(int k = 0; k < m; k++){
+          pk_minus_yk = p_hat(k) - y(k);
+          dbeta = pk_minus_yk*A(k,l);
+          sum_theta = sum_theta + dbeta*beta(l+1)*(1-A(k,l))*X(k,n);
+          sum_beta = sum_beta + dbeta;
+          sum_beta0 = sum_beta0 + pk_minus_yk;
+        } // end for k to m
+        dL_dtheta(n,l) = sum_theta/m;
+      } // end for n to nx
+      dL_dbeta(l+1) = sum_beta/m;
+    } // end for l to q
+    dL_dbeta(0) = sum_beta0/m;
+    
+    return List::create(
+    dL_dbeta,
+    dL_dtheta
+    );
+  }
+"
+)
+```
+
+Now, we write the function that will iteratively call the gradient function and update the values. It takes as input the data matrix $X$, the response variable vector $y$, the number of nodes in the hidden layere $q$, the $\alpha$ parameter for gradient descent, the maximum number of iterations of the algorithm, the initial parameters $\beta$ and $\theta$, and the seed to replicate the results.
+
+```{r}
+
+ann_rcpp <- function(X, 
+                     y, 
+                     q = 3, 
+                     alpha = 0.01, 
+                     n_iter = 200, 
+                     init_beta = "random", 
+                     init_theta = "random", 
+                     seed = "random"){
+  # X: data matrix.
+  # y: response vector.
+  # q: number of hidden nodes.
+  # alpha: learning rate.
+  # n_iter: number of iterations.
+  # init_beta: initial beta vector. If "random", it will be chosen at random.
+  # init_theta: initial theta matrix. If "random", it will be chosen at random.
+  # seed: used to for initial beta and theta.
+  
+  m = nrow(X)
+  X = cbind(rep(1, m), X)
+  nx = ncol(X)
+  
+  if(init_beta == "random") {
+    if(seed != "random") set.seed(seed)
+    beta = 0.1*runif(q + 1, -0.5, 0.5)
+    init_beta = beta
+  } else{
+    beta = init_beta
+  }
+  if(init_theta == "random"){
+    if(seed != "random") set.seed(seed)
+    theta = replicate(q, 0.1*runif(nx, -0.5, 0.5))
+    init_theta = theta
+  } else {
+    theta = init_theta
+  }
+  
+  # Create a dataframe that will show values of interest in each iteration
+  convergence_monitor_df <- data_frame(
+    iter = 1:n_iter,
+    lossf = as.numeric(rep(NA, n_iter)),
+    norm_diff_params = as.numeric(rep(NA, n_iter)),
+    norm_gradient = as.numeric(rep(NA, n_iter))
+  )
+  
+  i = 0
+  while(i < n_iter){
+    if(i %% 1000 == 0) cat("Iter:", i, "\n")
+    i = i + 1
+    z = X %*% theta
+    A = sigma(z)
+    A_aug = cbind(rep(1, m), A)
+    p_hat = sigma(A_aug %*% beta)
+    
+    gradients <- compute_gradient(X, p_hat, y, beta, A)
+    dL_dbeta <- gradients[[1]]
+    dL_dtheta <- gradients[[2]]
+    
+    theta_old <- theta
+    beta_old <- beta
+    
+    beta <- beta - alpha*dL_dbeta
+    theta <- theta - alpha*dL_dtheta
+    
+    norm_diff_beta_sq <- sum((beta - beta_old)^2)
+    norm_diff_theta_sq <- sum((theta - theta_old)^2)
+    
+    convergence_monitor_df$lossf[i] <- loss_function(p_hat, y)
+    convergence_monitor_df$norm_diff_params[i] <- sqrt(norm_diff_beta_sq + norm_diff_theta_sq)
+    convergence_monitor_df$norm_gradient[i] <- sqrt(sum(dL_dbeta^2) + sum(dL_dtheta^2))
+    
+  }
+  
+  out <- list(
+    beta = beta,
+    theta = theta, 
+    init_theta = init_theta,
+    init_beta = init_beta,
+    convergence_monitor_df = convergence_monitor_df
+  )
+  return(out)
+}
+```
+
+We also write the auxiliary function that computes $\sigma(x)$, the logistic function.
+
+```{r, eval=TRUE}
+sigma <- function(x){
+  1/(1 + exp(-x))
+}
+```
+
+# Examples
+
+The following examples were taken from the course taught by [Felipe González](felipegonzalez.github.io) at [ITAM](https://www.itam.mx/en). They show how the code can approximate non-linear functions quite accurately.
+
+### Example 1
+
+This example is a function of a single variable $x$ such that for each $x$, the probability of $x$ being 1 is $\sigma(2 - 3x^2)$, where $\sigma(x)$ is the logistic function. The data generating function and the generated data can be seen in the following plot. Six hundred data points were generated.
+
+```{r, eval=TRUE}
+
+set.seed(201801)
+
+dat_1 <- data.frame(x_1 = runif(600, -2, 2)) %>% 
+  mutate(y = rbinom(600, 1, sigma(2 - 3 * x_1^2)))
+
+dat_p <- data.frame(x = seq(-2, 2, 0.01)) %>% 
+  mutate(p = sigma(2 - 3 * x^2))
+
+dat_p %>% 
+  ggplot() +
+  geom_line(aes(x, p), col = 'red') +
+  geom_jitter(data = dat_1, aes(x = x_1, y = y), 
+              alpha = 0.5,
+              size = 0.8,
+              position = position_jitter(height=0.01))
+
+```
+
+
+```{r}
+ann_1 <- ann_rcpp(as.matrix(dat_1$x_1), dat_1$y, q = 4, alpha = 0.3, n_iter = 15000, seed = 2018)
+#plot_convergence(ann_1)
+
+predictions_1 <- predict(ann_1, as.matrix(dat_1$x_1))
+
+```
+
 
 
