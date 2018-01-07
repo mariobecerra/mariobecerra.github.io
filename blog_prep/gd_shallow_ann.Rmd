@@ -18,12 +18,29 @@ The type of problem considered in this post is a binary classification problem, 
 We want to find parameters $\theta_l^{(j)}$ and $\beta_j$ for $l = 1, ..., n_x$ and $j = 1, ..., q$ that minimize a certain loss function. Since we are working on a binary classification problem, a suitable loss function is the sometimes called cross-entropy loss or deviance loss:
 
 $$
-  L(\theta, \beta) = \sum_{k = 1}^m \left[ -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})) \right].
+  \mathcal{L}(\theta, \beta) = \frac{1}{m} \sum_{k = 1}^m \left[ -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})) \right].
 $$
 
+Now, let's rewrite de loss function in terms of another function $\mathcal{l_k}$, defined as
 
+$$
+  \mathcal{l_k}(\theta, \beta) = -(y_k \mathrm{log}(\hat{p_k}) + (1 - y_k) \mathrm{log}(1 - \hat{p_k})),
+$$
 
+such that 
 
+$$
+  \mathcal{L}(\theta, \beta) = \frac{1}{m} \sum_{k = 1}^m \mathcal{l_k}(\theta, \beta).
+$$
 
+To do gradient descent, we need to find the partial derivative of $\mathcal{L}$ with respect to each parameter. We first take the partial derivative with respect to $\mathcal{l_k}$ and then sum them and divide them by $m$ to have the partial derivative with respect to $\mathcal{L}$.
+
+First, we go with the $\beta$ parameters. For each $l \in \left\{1, ..., q \right\}$, we have that according to the chain rule
+
+$$
+  \frac{\partial \mathcal{l_k}}{\partial \beta_l} = \frac{\partial \mathcal{l_k}}{\partial p_k} \frac{\partial \mathcal{p_k}}{\partial w_k} \frac{\partial \mathcal{w_k}}{\partial \beta_l}
+$$
+
+with $w_k$ defined as $\sum_{l = 1}^q \beta_l a_l^{(k)}$, and $a_l^{(k)} = \sigma(\sum_{i = 1}^{n_x} \theta_l^{(i)} x_i^{(k)})$.
 
 
