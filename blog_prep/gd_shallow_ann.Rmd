@@ -9,7 +9,7 @@ output: html_document
 library(knitr)
 library(tidyverse)
 theme_set(theme_bw())
-opts_chunk$set(echo = T, message=F, warning=FALSE, cache = T, eval = F)
+opts_chunk$set(echo = T, message=F, warning=FALSE, cache = T, eval = T)
 ```
 
 
@@ -380,3 +380,49 @@ dat_1 %>%
 ```
 
 
+
+### Example 2
+
+This second example is also a function of a single variable $x$, but in this case, the probability of $x$ being equal to 1 is more complex, it's $\sigma(3 + x - 3x^2 + 3\cos(4x))$. Once again, the data generating function and the 600 generated data points can be seen in the following plot.
+
+```{r}
+
+dat_p_2 <- data.frame(x = seq(-2,2,0.05)) %>% 
+  mutate(p = sigma(3 + x - 3*x^2 + 3*cos(4*x)))
+
+set.seed(201801)
+
+dat_2 <- data.frame(x = runif(600, -2, 2)) %>% 
+  mutate(y = rbinom(600, 1, sigma(3 + x- 3*x^2 + 3*cos(4*x))))
+
+dat_p_2 %>% 
+  ggplot() +
+  geom_line(aes(x, p), col = 'red') +
+  geom_jitter(data = dat_2, aes(x = x, y = y), 
+              alpha = 0.4,
+              size = 0.8,
+              position = position_jitter(height=0.02))
+
+```
+
+Calling the data fitting function.
+
+```{r}
+ann_2 <- ann_rcpp(as.matrix(dat_2$x), dat_2$y, q = 8, alpha = 0.5, n_iter = 25000, seed = 2018)
+#plot_convergence(ann_2)
+```
+
+The fitted values versus the real data generating function. Again, the function fits reasonably well the data.
+
+```{r}
+predictions_2 <- predict(ann_2, as.matrix(dat_2$x))
+
+dat_2 %>% 
+  mutate(pred = predictions_2) %>% 
+  ggplot(aes(x = x, y = pred)) + 
+  geom_jitter(data = dat_2, aes(x = x, y = y), col ='black',
+              position = position_jitter(height=0.02), alpha = 0.4) +
+  geom_line(color = 'blue') +
+  geom_line(data = dat_p_2, aes(x = x, y = p), col='red') + 
+  theme_bw()
+```
