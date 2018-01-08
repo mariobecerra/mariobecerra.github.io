@@ -301,6 +301,8 @@ sigma <- function(x){
 }
 ```
 
+We write the loss function given a vector of response variables $y$ and predicted probabilities $\hat{p}$.
+
 ```{r, eval=TRUE}
 loss_function <- function(p_hat, y){
   lossf = - 2 * mean(y*log(p_hat) + (1-y)*log(1-p_hat))
@@ -308,7 +310,6 @@ loss_function <- function(p_hat, y){
 }
 
 ```
-
 
 And a function that, given a computed ANN, makes predictions for new data $X_{\mathrm{new}}$.
 
@@ -322,6 +323,23 @@ predict <- function(ann, X){
   p_hat = sigma(A_aug %*% ann$beta)
   return(p_hat)
 }
+```
+
+This next function plots the value of the loss function in each iteration of the gradient descent algorithm.
+
+```{r}
+plot_loss_iter <- function(ann){
+  
+  gg_lossf <- ann$convergence_monitor_df %>% 
+    ggplot(aes(iter, lossf)) + 
+    geom_line(size = 0.5) +
+    geom_line() +
+    ylab("Loss function") +
+    xlab("Iteration")
+
+  return(gg_lossf)
+}
+
 ```
 
 
@@ -357,9 +375,14 @@ Now, we call the implemented function. We set it to 8000 iterations. This value 
 
 ```{r, eval=TRUE}
 ann_1 <- ann_rcpp(as.matrix(dat_1$x_1), dat_1$y, q = 4, alpha = 0.3, n_iter = 8000, seed = 2018)
-#plot_convergence(ann_1)
-
 ```
+
+The next image shows the plot of the value of the loss function in each iteration. It can be seen that the value decreases with each iteration.
+
+```{r}
+plot_loss_iter(ann_1)
+```
+
 
 And now, we compute the predicted values for the generated data. The plot shows the original data generating function in red and the computed function in blue. We can see that the adjusted values are quite good.
 
@@ -409,8 +432,14 @@ Calling the data fitting function.
 
 ```{r}
 ann_2 <- ann_rcpp(as.matrix(dat_2$x), dat_2$y, q = 8, alpha = 0.5, n_iter = 25000, seed = 2018)
-#plot_convergence(ann_2)
 ```
+
+The loss function values in each iteration:
+
+```{r}
+plot_loss_iter(ann_2)
+```
+
 
 The fitted values versus the real data generating function. Again, the function fits reasonably well the data.
 
@@ -426,3 +455,68 @@ dat_2 %>%
   geom_line(data = dat_p_2, aes(x = x, y = p), col='red') + 
   theme_bw()
 ```
+
+### Example 3
+
+This third example is a function of two variables, $x_1$ and $x_2$, such that the probability of each pair $(x_1, x_2)$ of being 1 is defined by the function $\sigma(-5 + 10x_1 + 10x_2 - 30x_1x_2)$. The function can be seen in the following plot.
+
+```{r}
+
+p_3 <- function(x1, x2){
+  sigma(-5 + 10*x1 + 10*x2 - 30*x1*x2)
+}
+
+expand.grid(x1 = seq(0, 1, 0.05), x2 = seq(0, 1, 0.05)) %>% 
+  mutate(p = p_3(x1, x2)) %>% 
+  ggplot(aes(x = x1, y = x2)) + 
+  geom_tile(aes(fill = p))
+
+set.seed(2018)
+
+dat_3 <- data_frame(x1 = runif(1000, 0, 1), x2 = runif(1000, 0, 1)) %>%
+  mutate(p = p_3(x1, x2)) %>%
+  mutate(y = rbinom(1000, 1, p))
+
+dat_3 %>% 
+  ggplot(aes(x = x1, y = x2)) + 
+  geom_point(aes(color = y))
+
+```
+
+We call the function.
+
+```{r}
+ann_3 <- ann_rcpp(as.matrix(dat_3[, c("x1", "x2")]), 
+               dat_3$y, 
+               q = 3, 
+               alpha = 0.5, 
+               n_iter = 15000, 
+               seed = 2018)
+```
+
+Loss function values:
+
+```{r}
+plot_loss_iter(ann_3)
+```
+
+
+The fitted values can be seen in the following plot. The sub-plot on the left shows the predicted probabilities by the fitted ANN, and the sub-plot on the right shows the real probabilities. It can be seen that the parameters fit the data very well.
+
+```{r}
+expand.grid(x1 = seq(0, 1, 0.05), x2 = seq(0, 1, 0.05)) %>% 
+  mutate(real = p_3(x1, x2)) %>% 
+  mutate(pred = predict(ann_3, as.matrix(.[, c("x1", "x2")]))) %>% 
+  gather(type, prob, real, pred) %>% 
+  ggplot(aes(x = x1, y = x2)) + 
+  geom_tile(aes(fill = prob)) +
+  facet_wrap(~type)
+
+```
+
+# Conclusions
+
+This post showed how to implement a simple gradient descent algorithm for a single-layer feedforward artificial neural network. The main function was implemented in Rcpp so the computation would be faster. The examples show that the implementation works, although could be improved by adding an automatic stopping rules and some criteria to select the $\alpha$ in the gradient descent algorithm.
+
+
+
