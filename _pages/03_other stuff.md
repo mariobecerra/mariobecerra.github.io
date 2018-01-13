@@ -35,6 +35,10 @@ permalink: /other/
 
 # Reading list
 
+### 2018
+
+* "The Casual Vacancy" by J.K. Rowling
+
 ### 2017
 
 * "The Girl Who Takes an Eye for an Eye" by David Lagercrantz
