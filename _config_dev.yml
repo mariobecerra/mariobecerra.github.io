@@ -11,5 +11,6 @@ github_username:  mariobecerra
 sass:
   sass_dir: _sass
 include: ['_pages']
+exclude: ['blog_prep']
 kramdown:
   input: GFM
