@@ -1,3 +1,4 @@
+library(caret)
 library(tidyverse)
 
 data <- read.table("~/Desktop/Temp/Data_git/zip/zip.train.gz") %>% 
@@ -45,7 +46,7 @@ svd_data <- lapply(unique_y, function(x){
     select(-y) %>% 
     as.matrix() %>% 
     t()
-  svd_i <- irlba::irlba(data_subset, nv = 15)
+  svd_i <- irlba::irlba(data_subset, nv = 40)
   return(svd_i$u)
 })
 names(svd_data) <- paste0("y_", unique_y)
@@ -67,15 +68,18 @@ plot_figure_aux(svd_data$y_8[,1])
 
 
 
-predict_svd <- function(new_images, Us){
+predict_svd <- function(new_images, Us, k = "all"){
   # new_images: matrix in which every column is a stacked image
   # Us: list of SVD matrices
+  # k: number of singular images to use
+  
+  if(k == "all") k = ncol(Us[[1]])
   
   # Matrix of the norms if the residuals for each image. Each row is an image to be classified.
   norm_resids <- as.data.frame(matrix(rep(0.0, length(Us)*ncol(new_images)), nrow = ncol(new_images)))
   names(norm_resids) = names(Us)
   for(i in seq_along(Us)){
-    Ui <- Us[[i]]
+    Ui <- Us[[i]][,1:k]
     Utz <- t(Ui) %*% new_images
     res = new_images - (Ui %*% Utz)
     norm_resids[,i] = slam::col_norms(res)
@@ -96,4 +100,35 @@ predictions_data <- predict_svd(t(data_test[,2:257]),
   mutate(real_class = paste0("y_", data_test$y))
 
 caret::confusionMatrix(predictions_data$pred_class, predictions_data$real_class)
+
+
+resultds_preds <- lapply(1:40, function(i){
+  predictions <- predict_svd(t(data_test[,2:257]),
+                             svd_data, 
+                             i) %>% 
+    mutate(real_class = paste0("y_", data_test$y))
+  cm <- confusionMatrix(predictions$pred_class, predictions$real_class)
+  out <- cm$overall %>% 
+    t() %>% 
+    as_tibble() %>% 
+    mutate(k = i)
+  return(out)
+}) %>% 
+  bind_rows()
+
+resultds_preds %>% 
+  ggplot(aes(k, Accuracy)) +
+  geom_ribbon(aes(ymin = AccuracyLower,
+                  ymax = AccuracyUpper),
+              alpha = 0.2) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
+resultds_preds %>% 
+  ggplot(aes(k, Kappa)) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
 
