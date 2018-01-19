@@ -39,17 +39,24 @@ plot_figure(data, 1200)
 plot_figure(data, 2588)
 
 
-unique_y <- unique(data$y)
-svd_data <- lapply(unique_y, function(x){
-  data_subset <- data %>% 
-    filter(y == x) %>% 
-    select(-y) %>% 
-    as.matrix() %>% 
-    t()
-  svd_i <- irlba::irlba(data_subset, nv = 40)
-  return(svd_i$u)
-})
-names(svd_data) <- paste0("y_", unique_y)
+train <- function(data){
+  # The response variable must be labeled as "y"
+  unique_y <- unique(data$y)
+  svd_data <- lapply(unique_y, function(x){
+    data_subset <- data %>% 
+      filter(y == x) %>% 
+      select(-y) %>% 
+      as.matrix() %>% 
+      t()
+    svd_i <- irlba::irlba(data_subset, nv = 40)
+    return(svd_i$u)
+  })
+  names(svd_data) <- paste0("y_", unique_y)
+  return(svd_data)
+}
+
+
+svd_data <- train(data)
 
 
 plot_figure_aux(svd_data$y_0[,1])
@@ -98,9 +105,6 @@ predict_svd <- function(new_images, Us, k = "all"){
 predictions_data <- predict_svd(t(data_test[,2:257]),
                                 svd_data) %>% 
   mutate(real_class = paste0("y_", data_test$y))
-
-caret::confusionMatrix(predictions_data$pred_class, predictions_data$real_class)
-
 
 resultds_preds <- lapply(1:40, function(i){
   predictions <- predict_svd(t(data_test[,2:257]),
