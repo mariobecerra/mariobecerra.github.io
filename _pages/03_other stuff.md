@@ -37,12 +37,13 @@ permalink: /other/
 
 ### 2018
 
+* "The Grapes of Wrath" by John Steinbeck
+* "The Catcher in the Rye" by J.D. Salinger
 * "The Casual Vacancy" by J.K. Rowling
 
 ### 2017
 
 * "The Girl Who Takes an Eye for an Eye" by David Lagercrantz
-* "Introduction to the history of philosophy" by Ramón Xirau
 * "The Girl in the Spider's Web" by David Lagercrantz 
 * "The Signal and the Noise" by Nate Silver 
 * "Pedro Páramo" by Juan Rulfo
