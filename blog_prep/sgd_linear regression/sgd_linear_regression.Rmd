@@ -1,0 +1,360 @@
+---
+#title: 
+author: "Mario Becerra"
+#date: 
+output: html_document
+---
+
+In a [previous post](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html) I showed how to implement gradient descent and stochastic gradient descent for linear regression and logistic regression. The problem with that implementation was that I used R's for loops which can be quite slow. In this version, I implement the functions in Rcpp, reducing the running time considerably.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Stochastic gradient descent (SGD)
+
+In statistical learning it is common to find the need to solve optimization problems of the form
+
+\begin{equation}
+\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
+L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+\end{equation}
+
+In both past examples, the loss functions that we wanted to minimize were expressed in that way. Gradient descent uses iterations in the form
+
+\[
+\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
+\]
+
+which involves evaluating $n$ gradients and then taking an average. In the cases of big scale machine learning, the number of observations $n$ is really big, so computing all of those gradients in each iteration is expensive. That's why methods such as SGD come up, methods where the number of gradients to compute doesn't depend on $n$, it is constant. SGD uses iterations of the form
+
+\[
+\theta_{k+1} = \theta_k - \alpha_k \nabla \psi_{i_k}(\theta_k),
+\]
+
+where $i_k \in \left\{1, 2, ..., n \right\}$ is randomly chosen. The gradient $\nabla \psi_{i_k}(\theta_k)$ is an unbiased estimator of $\nabla L(\theta_k)$. This way, each iteration is really cheap because it involves the computation of only one gradient. It can happen that some $\nabla \psi_{i_k}(\theta_k)$ in particular doesn't give a direction of descent from $\theta_k$, but on average we do get descent directions, such that the sequence $\left\{ \theta_0, \theta_1, ... \right\}$ can be guided to a minimizer $\theta^*$.
+
+### SGD for linear regression: 
+
+To show this method, the same two examples are implemented using SGD.
+
+##### **Linear regression**
+
+```{r, echo=FALSE, warning=FALSE}
+N <- 1000
+beta_0 <- 2
+beta_1 <- 1
+
+data <- tibble(x = rnorm(N),
+               y = beta_0 + beta_1*x + rnorm(N))
+
+model <- lm(y~x, data = data)
+
+```
+
+
+As we saw before, we want to minimize the quadratic loss function. Here, each $\psi_i(x, \theta)$ is
+
+$$
+\psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
+$$ 
+
+with $\ell_i(x, \beta)$ defined earlier as
+
+$$
+\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
+$$
+We can see that the partial derivative of $\psi_i(x, \beta)$ with respect to each $\beta_j$ with $j \in \left\{ 0, ..., p \right\}$ is
+
+\[
+\frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
+\]
+
+so, the direction of descent in each iteration is
+
+\[
+\nabla_{\beta} \psi_i(x, \beta) = 
+\left( \frac{\partial \psi_i}{\partial \beta_0}, ..., \frac{\partial \psi_i}{\partial \beta_p} \right).
+\]
+
+Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stopping rule was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was less than $0.000001$, or that there were more than 300 iterations or that the squared norm of the differences of the parameter vector from one iteration to the next (i.e. $||\beta^{k+1} - \beta^k||^2_2$) was less than $10^{-15}$. 
+
+In SGD, an epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once.
+
+The following code shows the functions implemented to get SGD running. I use for loops, which I know is not the best idea in R, but it's to illustrate. Maybe later I'll implement it with Rcpp and see the difference in speed.
+
+```{r}
+
+# Rcpp SGD regression
+
+library(tidyverse)
+library(Rcpp)
+
+N <- 1000
+beta_0 <- 2
+beta_1 <- 1
+
+data <- tibble(x = rnorm(N),
+               y = beta_0 + beta_1*x + rnorm(N))
+
+model <- lm(y~x, data = data)
+
+gradient(matrix(c(-2, -3, 4, 1,70, 6), ncol = 2), c(9, 7))
+
+sourceCpp("sgd.cpp")
+
+# Start the algorithm
+max_it <- 300
+n <- nrow(data)
+data_gradient_descent <- tibble(
+  epoch = rep(0, max_it*n),
+  obs = 1:(max_it*n),
+  beta_0 = rep(0, max_it*n),
+  beta_1 = rep(0, max_it*n),
+  gradient_norm = rep(0, max_it*n))
+
+observation_control <- tibble(
+  obs = 1:(max_it*n),
+  shuffle_ix = rep(0, max_it*n))
+
+i = 0
+betas <- c(0, 0)
+alpha = 0.001
+while(i < max_it){
+  i = i + 1
+  print(i)
+  # Shuffle data and keep a track of reordered observations
+  set.seed(201802)
+  shuffle_ix <- sample(nrow(data))
+  observation_control$shuffle_ix[(i*n - n + 1):(i*n)] <- shuffle_ix
+  shuffled_data = data[shuffle_ix,]
+  epoch_betas <- epoch_update(as.matrix(shuffled_data), betas, alpha, i)
+  
+  #epoch_betas_for$betas
+  #epoch_betas$betas
+  
+  betas_old <- betas
+  betas <- epoch_betas$betas
+  epoch_values_temp <- as.data.frame(epoch_betas$epoch_values)
+  names(epoch_values_temp) <- names(data_gradient_descent)
+  data_gradient_descent[((i-1)*n + 1):((i)*n),] <- epoch_values_temp
+  g_norm <- epoch_betas$epoch_values[n, 5]
+  # g_norm <- epoch_betas$epoch_values$gradient_norm[n]
+  dif_betas_norm <- sum((betas - betas_old)^2)
+  if(g_norm < 0.000001 | dif_betas_norm < 1e-15) break
+}
+
+data_gradient_descent <- data_gradient_descent[1:(i*n),]
+data_gradient_descent$it <- 1:nrow(data_gradient_descent)
+
+# Plots all iterations in all epochs
+data_gradient_descent %>% 
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_path(size = 0.1, color = 'black') +
+  geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5,
+             color = 'blue') +
+  theme(
+    panel.grid.minor = element_blank()
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+```{r, eval = F}
+# Gradient for an observation
+gradient_row <- function(data_row, betas){
+  li <- data_row$y - betas[1] - betas[2]*data_row$x
+  g1 <- -2*li
+  g2 <- -2*li*data_row$x
+  return(c(g1, g2))
+}
+
+epoch_update <- function(data, betas, alpha, n_epoch, verbose = 1, reordering = F){
+  n <- nrow(data)
+  if(reordering) data$ix <- sample(1:n)
+  else data$ix <- 1:n
+  epoch_values <- tibble(
+    n_epoch = rep(n_epoch, n),
+    obs = 1:n,
+    beta_0 = rep(0, n),
+    beta_1 = rep(0, n),
+    gradient_norm = rep(0, n))
+  
+  # Iterate over rows in data
+  # Not the best practice in R to use for loops, but it's to illustrate
+  for(i in 1:n){
+    # Update coefficients
+    g <- gradient_row(data[data$ix == i,], betas) 
+    betas <- betas - alpha*g
+    # Print and write values in table to keep track and make plots
+    g_norm <- sqrt(sum(g^2))
+    g_unit <- g/g_norm
+    epoch_values$beta_0[i] <- betas[1]
+    epoch_values$beta_1[i] <- betas[2]
+    epoch_values$gradient_norm[i] <- g_norm
+    if(verbose == 2){
+      cat(
+        "\n\tEpoch: ", n_epoch,
+        "\n\tObs: ", i, 
+        "\n\tbeta_0: ", betas[1], 
+        "\n\tbeta_1: ", betas[2],
+        "\n\tgradient_norm: ", g_norm, 
+        "\n\tDirection: ", g_unit[1], g_unit[2],
+        "\n")
+    }
+  } # End for
+  
+  if(verbose == 1){
+    cat(
+      "\n\tEpoch: ", n_epoch,
+      "\n\tbeta_0: ", epoch_values$beta_0[n],
+      "\n\tbeta_1: ", epoch_values$beta_1[n],
+      "\n\tgradient_norm: ", epoch_values$gradient_norm[n],
+      "\n")
+  }
+  return(list(
+    epoch_values = epoch_values,
+    betas = betas
+  ))
+}
+```
+
+We start the algorithm and save the parameters in a dataframe.
+
+```{r SGD_LR, cache=TRUE, warning=FALSE, eval = F}
+# Start the algorithm
+max_it <- 300
+n <- nrow(data)
+data_gradient_descent <- tibble(
+  epoch = rep(0, max_it*n),
+  obs = 1:(max_it*n),
+  beta_0 = rep(0, max_it*n),
+  beta_1 = rep(0, max_it*n),
+  gradient_norm = rep(0, max_it*n))
+
+i = 0
+betas <- c(0, 0)
+alpha = 0.001
+while(i < max_it){
+  i = i + 1
+  epoch_betas <- epoch_update(data, betas, alpha, i, verbose = 0)
+  betas_old <- betas
+  betas <- epoch_betas$betas
+  data_gradient_descent[((i-1)*n + 1):((i)*n),] <- epoch_betas$epoch_values
+  g_norm <- epoch_betas$epoch_values$gradient_norm[n]
+  dif_betas_norm <- sum((betas - betas_old)^2)
+  if(g_norm < 0.000001 | dif_betas_norm < 1e-15) break
+}
+
+data_gradient_descent <- data_gradient_descent[1:(i*n),]
+data_gradient_descent$it <- 1:nrow(data_gradient_descent)
+
+```
+
+We define an auxiliary function that helps us plot iterations and epochs.
+
+```{r, eval = F}
+plot_gd_iter <- function(data_gradient_descent, model, beta_0, beta_1, denom = 0){
+  if(denom > 0) {
+    data <- data_gradient_descent %>% 
+      filter(it %% floor(n/denom) == 1)
+  } else {
+    data <- data_gradient_descent
+  }
+  
+  gg <- data %>% 
+    ggplot(aes(beta_0, beta_1)) +
+    xlab("Beta 0") +
+    ylab("Beta 1") +
+    geom_segment(
+      aes(
+        xend = c(tail(beta_0, n = -1), NA),
+        yend = c(tail(beta_1, n = -1), NA)
+      ),
+      size = 0.4,
+      color = '#919191',
+      arrow = arrow(length = unit(0.18, "cm"))
+    ) +
+    geom_point(size = 0.3, color = 'black') +
+    geom_point(aes(x, y),
+               data = tibble(x = beta_0,
+                             y = beta_1)) +
+    geom_point(aes(x, y),
+               data = tibble(x = model$coefficients[1],
+                             y = model$coefficients[2]),
+               shape = 'x',
+               size = 5) +
+    theme(
+      panel.grid.minor = element_blank()
+    )
+  return(gg)
+}
+
+```
+
+We plot the points of the parameters in each iteration and each epoch. The first plot shows the value at the beginning of each epoch, and the second one shows all iterations.
+
+```{r, warning=FALSE, eval = F}
+# Plots only at the beginning of each epoch
+plot_gd_iter(data_gradient_descent, model, beta_0, beta_1, 1) 
+
+# Plots all iterations in all epochs
+data_gradient_descent %>% 
+  ggplot(aes(beta_0, beta_1)) +
+  xlab("Beta 0") +
+  ylab("Beta 1") +
+  geom_path(size = 0.1, color = 'black') +
+  geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+  geom_point(aes(x, y),
+             data = tibble(x = beta_0,
+                           y = beta_1)) +
+  geom_point(aes(x, y),
+             data = tibble(x = model$coefficients[1],
+                           y = model$coefficients[2]),
+             shape = 'x',
+             size = 5) +
+  theme(
+    panel.grid.minor = element_blank()
+  )
+```
+
+We can see that in the second figure that the directions go zigzagging, but in the end reach the final solution. In GD the directions were more uniform.
+
+In both figures there's once more the big dot that represents the real value of the parameters ($\beta_0=2$ y $\beta_1 = 1$) and the x that represents the value from the lm package, but the second image isn't that clear because of all the noise in the directions.
