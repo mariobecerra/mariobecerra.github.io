@@ -91,8 +91,8 @@ library(tidyverse)
 library(Rcpp)
 
 N <- 1000
-beta_0 <- 2
-beta_1 <- 1
+beta_0 <- -2
+beta_1 <- 4
 
 data <- tibble(x = rnorm(N),
                y = beta_0 + beta_1*x + rnorm(N))
@@ -159,7 +159,7 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
     g_norm <- epoch_betas$epoch_values[num_iters, 5]
     # g_norm <- epoch_betas$epoch_values$gradient_norm[n]
     dif_betas_norm <- sum((betas - betas_old)^2)
-    if(g_norm < 0.000001 | dif_betas_norm < 1e-15) break
+    if(g_norm < 0.000001 | dif_betas_norm < 1e-8) break
   }
   
   data_gradient_descent <- data_gradient_descent[1:(i*num_iters),]
@@ -171,7 +171,7 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
   return(data_gradient_descent)
 }
 
-plot_minibatches_2_params <- function(data_minibatch){
+plot_minibatches_2_params <- function(data_minibatch, beta_0, beta_1, coef_1, coef_2){
   if(sum(grepl("beta", names(data_minibatch))) == 2) {
     # Plots all iterations in all epochs
     gg <- data_minibatch %>% 
@@ -180,12 +180,12 @@ plot_minibatches_2_params <- function(data_minibatch){
       ylab("Beta 1") +
       geom_path(size = 0.1, color = 'black') +
       geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+      # geom_point(aes(x, y),
+      #            data = tibble(x = beta_0,
+      #                          y = beta_1)) +
       geom_point(aes(x, y),
-                 data = tibble(x = beta_0,
-                               y = beta_1)) +
-      geom_point(aes(x, y),
-                 data = tibble(x = model$coefficients[1],
-                               y = model$coefficients[2]),
+                 data = tibble(x = coef_1,
+                               y = coef_2),
                  shape = 'x',
                  size = 5,
                  color = 'blue') +
@@ -195,7 +195,6 @@ plot_minibatches_2_params <- function(data_minibatch){
   } else{
     return("Error")
   }
-  
 }
 
 data_minibatch_1_1 <- lm_minibatch(X, y, 1, initial_point = c(-10, -10))
@@ -203,16 +202,20 @@ data_minibatch_1_2 <- lm_minibatch(X, y, 2, initial_point = c(-10, -10))
 data_minibatch_1_13 <- lm_minibatch(X, y, 13, initial_point = c(-10, -10))
 data_minibatch_1_15 <- lm_minibatch(X, y, 13, initial_point = c(-100, 100))
 
-plot_minibatches_2_params(data_minibatch_1_1)
-plot_minibatches_2_params(data_minibatch_1_2)
-plot_minibatches_2_params(data_minibatch_1_13)
-plot_minibatches_2_params(data_minibatch_1_15)
+plot_minibatches_2_params(data_minibatch_1_1, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
+plot_minibatches_2_params(data_minibatch_1_2, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
+plot_minibatches_2_params(data_minibatch_1_13, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
+plot_minibatches_2_params(data_minibatch_1_15, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 
 
+data2 <- tibble(x = rnorm(1000009),
+               y = beta_0 + beta_1*x + rnorm(1000009))
 
 
-
-
+data_minibatch_2_100 <- lm_minibatch(data2$x, data2$y, 100, initial_point = c(-10, -10))
+# data_minibatch_2_all <- lm_minibatch(data2$x, data2$y, nrow(data2), initial_point = c(-10, -10))
+# Usando como tolerancia en las betas 1e-15, llegó a las 3000 iteraciones usando el dataset completo y tardó 7 minutos (420 seg)
+plot_minibatches_2_params(data_minibatch_2_100, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 
 
 
