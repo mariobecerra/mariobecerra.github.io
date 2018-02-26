@@ -100,12 +100,17 @@ data <- tibble(x = rnorm(N),
 model <- lm(y~x, data = data)
 
 data_matrix = as.matrix(data)
+X = data$x
+y = data$y
 
 sourceCpp("sgd.cpp")
 
 gradient(matrix(c(-2, -3, 4, 1,70, 6), ncol = 2), c(9, 7))
 
-lm_minibatch <- function(X, y, minibatch_size = 15, max_it = 3000, initial_point = c(0.0, 0.0)){
+lm_minibatch <- function(X, y, minibatch_size = 15, 
+                         max_it = 3000, 
+                         initial_point = c(0.0, 0.0), 
+                         seed = 201802){
   # Start the algorithm
   data_matrix = cbind(X, y)
   n <- nrow(data_matrix)
@@ -132,7 +137,7 @@ lm_minibatch <- function(X, y, minibatch_size = 15, max_it = 3000, initial_point
     i = i + 1
     print(i)
     # Shuffle data and keep a track of reordered observations
-    set.seed(201802)
+    set.seed(seed)
     shuffle_ix <- sample(nrow(data_matrix))
     # observation_control$shuffle_ix[(i*num_iters - num_iters + 1):(i*num_iters)] <- shuffle_ix
     shuffled_data = data_matrix[shuffle_ix,]
