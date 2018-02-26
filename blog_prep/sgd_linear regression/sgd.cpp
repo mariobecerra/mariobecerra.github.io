@@ -12,18 +12,46 @@ using namespace RcppArmadillo;
 // [[Rcpp::export]]
 NumericVector gradient(NumericMatrix data, NumericVector betas){
   int n = data.nrow();
-  int p = data.ncol();
+  int p = data.ncol(); // number of coefficients (including intercept)
   NumericVector li(n);
   NumericVector g_out(p);
-  for(int i = 0; i < n; i++){
-    li(i) = data(i, p-1) - betas(0) - betas(1)*data(i, 0);
+  for(int i = 0; i < n; i++){ // iterate over rows
+    double sum_betas_xi  = 0.0;
+    for(int j = 1; j < p; j++){ // iterate over columns
+      // li(i) = data(i, p-1) - betas(0) - betas(1)*data(i, 0);
+      sum_betas_xi = sum_betas_xi + betas(j)*data(i, j-1);
+    }
+    li(i) = data(i, p-1) - betas(0) - sum_betas_xi;
   }
-  NumericVector li_x(n);
-  for(int i = 0; i < n; i++){
-    li_x(i) = data(i, 0)*li(i);
+  NumericMatrix li_x(n, p-1);
+  for(int i = 0; i < n; i++){ // iterate over rows
+    for(int j = 0; j < p - 1; j++){ // iterate over columns
+      li_x(i, j) = data(i, j)*li(i);
+    }
   }
+  
+  // // print li_x
+  // cout << "li_x: \n";
+  // for(int i = 0; i < li_x.nrow(); i ++){
+  //   for(int j = 0; j < li_x.ncol(); j ++){
+  //     cout << "\t" << li_x(i, j) << "\t";
+  //   }
+  //   cout << "\n";
+  // }
+  // cout << "\n\n\n";
+  
+  // gradient for intercept
   g_out(0) = -2*sum(li)/n;
-  g_out(1) = -2*sum(li_x)/n;
+  
+  // gradient for all other parameters
+  for(int j = 0; j < p-1; j++){
+    double sum_li_x = 0.0;
+    for(int i = 0; i < n; i++){
+      sum_li_x = sum_li_x + li_x(i, j);
+    }
+    g_out(j+1) = -2*sum_li_x/n;
+  }
+  // g_out(1) = -2*sum(li_x)/n;
   
   return g_out;
 }
