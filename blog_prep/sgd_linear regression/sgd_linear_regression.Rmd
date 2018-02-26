@@ -171,27 +171,43 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
   return(data_gradient_descent)
 }
 
-data_minibatch_1 <- lm_minibatch(X, y, 13, initial_point = c(-10, -10))
+plot_minibatches_2_params <- function(data_minibatch){
+  if(sum(grepl("beta", names(data_minibatch))) == 2) {
+    # Plots all iterations in all epochs
+    gg <- data_minibatch %>% 
+      ggplot(aes(beta_0, beta_1)) +
+      xlab("Beta 0") +
+      ylab("Beta 1") +
+      geom_path(size = 0.1, color = 'black') +
+      geom_point(size = 0.01, color = 'black', alpha = 0.2) +
+      geom_point(aes(x, y),
+                 data = tibble(x = beta_0,
+                               y = beta_1)) +
+      geom_point(aes(x, y),
+                 data = tibble(x = model$coefficients[1],
+                               y = model$coefficients[2]),
+                 shape = 'x',
+                 size = 5,
+                 color = 'blue') +
+      theme_bw()
+    # theme(panel.grid.minor = element_blank())
+    return(gg)
+  } else{
+    return("Error")
+  }
+  
+}
 
-# Plots all iterations in all epochs
-data_minibatch_1 %>% 
-  ggplot(aes(beta_0, beta_1)) +
-  xlab("Beta 0") +
-  ylab("Beta 1") +
-  geom_path(size = 0.1, color = 'black') +
-  geom_point(size = 0.01, color = 'black', alpha = 0.2) +
-  geom_point(aes(x, y),
-             data = tibble(x = beta_0,
-                           y = beta_1)) +
-  geom_point(aes(x, y),
-             data = tibble(x = model$coefficients[1],
-                           y = model$coefficients[2]),
-             shape = 'x',
-             size = 5,
-             color = 'blue') +
-  theme(
-    panel.grid.minor = element_blank()
-  )
+data_minibatch_1_1 <- lm_minibatch(X, y, 1, initial_point = c(-10, -10))
+data_minibatch_1_2 <- lm_minibatch(X, y, 2, initial_point = c(-10, -10))
+data_minibatch_1_13 <- lm_minibatch(X, y, 13, initial_point = c(-10, -10))
+data_minibatch_1_15 <- lm_minibatch(X, y, 13, initial_point = c(-100, 100))
+
+plot_minibatches_2_params(data_minibatch_1_1)
+plot_minibatches_2_params(data_minibatch_1_2)
+plot_minibatches_2_params(data_minibatch_1_13)
+plot_minibatches_2_params(data_minibatch_1_15)
+
 
 
 
