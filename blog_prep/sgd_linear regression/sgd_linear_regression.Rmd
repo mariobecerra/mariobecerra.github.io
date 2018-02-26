@@ -249,16 +249,33 @@ data_minibatch_4_100 <- lm_minibatch(data_4[,1:3], data_4$y, 100, initial_point 
 
 
 
+data(diamonds)
+head(diamonds)
 
+data_diamonds_temp <- diamonds %>% 
+  select(-x, -y, -z, -depth, -table, -cut, -color) %>% 
+  mutate(y = log(price), x2 = log(carat), clarity = as.factor(as.character(clarity)))
 
+clarity_dummy <- dummies::dummy(x = data_diamonds_temp$clarity) %>% as.data.frame()
+names(clarity_dummy) <- paste0("x1_", 1:ncol(clarity_dummy))
 
+data_diamonds <- clarity_dummy %>% 
+  bind_cols(
+    data_diamonds_temp %>% 
+      select(x2, y)
+  )
+  
+data_minibatch_diamonds_100 <- lm_minibatch(data_diamonds[,1:9], data_diamonds$y, minibatch_size = 100)
+betas_diamonds <- as.numeric(data_minibatch_diamonds_100[nrow(data_minibatch_diamonds_100), grepl("beta", names(data_minibatch_diamonds_100))])
 
+diamonds_preds <- as.matrix(cbind(rep(1, nrow(data_diamonds)), data_diamonds[,1:9])) %*% betas_diamonds
 
-
-
-
-
-
+tibble(pred = as.numeric(diamonds_preds),
+       real = data_diamonds$y) %>% 
+  ggplot() +
+  geom_point(aes(real, pred), size = 0.5, alpha = 0.5) +
+  geom_abline(slope = 1) +
+  theme_bw()
 
 
 
