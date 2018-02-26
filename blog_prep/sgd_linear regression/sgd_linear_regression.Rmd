@@ -99,23 +99,25 @@ data <- tibble(x = rnorm(N),
 
 model <- lm(y~x, data = data)
 
-gradient(matrix(c(-2, -3, 4, 1,70, 6), ncol = 2), c(9, 7))
-
 sourceCpp("sgd.cpp")
 
-# Start the algorithm
-max_it <- 300
-n <- nrow(data)
-data_gradient_descent <- tibble(
-  epoch = rep(0, max_it*n),
-  obs = 1:(max_it*n),
-  beta_0 = rep(0, max_it*n),
-  beta_1 = rep(0, max_it*n),
-  gradient_norm = rep(0, max_it*n))
+gradient(matrix(c(-2, -3, 4, 1,70, 6), ncol = 2), c(9, 7))
 
-observation_control <- tibble(
-  obs = 1:(max_it*n),
-  shuffle_ix = rep(0, max_it*n))
+# Start the algorithm
+max_it <- 3000
+minibatch_size = 10
+n <- nrow(data)
+if(n %% minibatch_size == 0) num_iters = floor(n/minibatch_size) else num_iters = floor(n/minibatch_size) + 1
+data_gradient_descent <- tibble(
+  epoch = rep(0, max_it*num_iters),
+  obs = 1:(max_it*num_iters),
+  beta_0 = rep(0, max_it*num_iters),
+  beta_1 = rep(0, max_it*num_iters),
+  gradient_norm = rep(0, max_it*num_iters))
+
+# observation_control <- tibble(
+#   obs = 1:(max_it*num_iters),
+#   shuffle_ix = rep(0, max_it*num_iters))
 
 i = 0
 betas <- c(0, 0)
@@ -126,9 +128,9 @@ while(i < max_it){
   # Shuffle data and keep a track of reordered observations
   set.seed(201802)
   shuffle_ix <- sample(nrow(data))
-  observation_control$shuffle_ix[(i*n - n + 1):(i*n)] <- shuffle_ix
-  shuffled_data = data[shuffle_ix,]
-  epoch_betas <- epoch_update(as.matrix(shuffled_data), betas, alpha, i)
+  # observation_control$shuffle_ix[(i*num_iters - num_iters + 1):(i*num_iters)] <- shuffle_ix
+  shuffled_data = as.matrix(data[shuffle_ix,])
+  epoch_betas <- epoch_update(shuffled_data, betas, alpha, i, minibatch_size)
   
   #epoch_betas_for$betas
   #epoch_betas$betas
@@ -137,14 +139,14 @@ while(i < max_it){
   betas <- epoch_betas$betas
   epoch_values_temp <- as.data.frame(epoch_betas$epoch_values)
   names(epoch_values_temp) <- names(data_gradient_descent)
-  data_gradient_descent[((i-1)*n + 1):((i)*n),] <- epoch_values_temp
-  g_norm <- epoch_betas$epoch_values[n, 5]
+  data_gradient_descent[((i-1)*num_iters + 1):((i)*num_iters),] <- epoch_values_temp
+  g_norm <- epoch_betas$epoch_values[num_iters, 5]
   # g_norm <- epoch_betas$epoch_values$gradient_norm[n]
   dif_betas_norm <- sum((betas - betas_old)^2)
   if(g_norm < 0.000001 | dif_betas_norm < 1e-15) break
 }
 
-data_gradient_descent <- data_gradient_descent[1:(i*n),]
+data_gradient_descent <- data_gradient_descent[1:(i*num_iters),]
 data_gradient_descent$it <- 1:nrow(data_gradient_descent)
 
 # Plots all iterations in all epochs
