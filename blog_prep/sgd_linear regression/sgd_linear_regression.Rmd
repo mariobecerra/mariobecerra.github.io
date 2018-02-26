@@ -93,6 +93,7 @@ library(Rcpp)
 N <- 1000
 beta_0 <- -2
 beta_1 <- 4
+beta_2 <- 2
 
 data <- tibble(x = rnorm(N),
                y = beta_0 + beta_1*x + rnorm(N))
@@ -100,7 +101,7 @@ data <- tibble(x = rnorm(N),
 model <- lm(y~x, data = data)
 
 data_matrix = as.matrix(data)
-X = data$x
+X = data[,"x"]
 y = data$y
 
 sourceCpp("sgd.cpp")
@@ -114,22 +115,30 @@ gradient(matrix(c(-2, -3, 4, 1,70, 6, 4, 9, 1, 4, 8, 2, 1, 2, 3, 4, 5, 6, 7, 8),
 
 lm_minibatch <- function(X, y, minibatch_size = 15, 
                          max_it = 3000, 
-                         initial_point = c(0.0, 0.0), 
+                         initial_point = NA, 
                          seed = 201802){
+  
   # Start the algorithm
-  data_matrix = cbind(X, y)
+  data_matrix = as.matrix(cbind(X, y))
   n <- nrow(data_matrix)
+  p <- ncol(data_matrix) # number of parameters (including intercept)
+  
+  if(is.na(initial_point[1])) initial_point = rep(0.0, p)
+  
   if(n %% minibatch_size == 0) {
     num_iters = floor(n/minibatch_size)
   } else {
     num_iters = floor(n/minibatch_size) + 1
   }
+
+  betas_df <- as.data.frame(matrix(rep(0, max_it*num_iters*p), ncol = p))
+  names(betas_df) <- paste0("beta_", 0:(p-1))
+  
   data_gradient_descent <- tibble(
     epoch = rep(0, max_it*num_iters),
     obs = 1:(max_it*num_iters),
-    beta_0 = rep(0, max_it*num_iters),
-    beta_1 = rep(0, max_it*num_iters),
-    gradient_norm = rep(0, max_it*num_iters))
+    gradient_norm = rep(0, max_it*num_iters)) %>% 
+    bind_cols(betas_df)
   
   # observation_control <- tibble(
   #   obs = 1:(max_it*num_iters),
@@ -156,10 +165,10 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
     epoch_values_temp <- as.data.frame(epoch_betas$epoch_values)
     names(epoch_values_temp) <- names(data_gradient_descent)
     data_gradient_descent[((i-1)*num_iters + 1):((i)*num_iters),] <- epoch_values_temp
-    g_norm <- epoch_betas$epoch_values[num_iters, 5]
+    g_norm <- epoch_betas$epoch_values[num_iters, 3]
     # g_norm <- epoch_betas$epoch_values$gradient_norm[n]
     dif_betas_norm <- sum((betas - betas_old)^2)
-    if(g_norm < 0.000001 | dif_betas_norm < 1e-8) break
+    if(g_norm < 1e-8 | dif_betas_norm < 1e-8) break
   }
   
   data_gradient_descent <- data_gradient_descent[1:(i*num_iters),]
@@ -201,11 +210,13 @@ data_minibatch_1_1 <- lm_minibatch(X, y, 1, initial_point = c(-10, -10))
 data_minibatch_1_2 <- lm_minibatch(X, y, 2, initial_point = c(-10, -10))
 data_minibatch_1_13 <- lm_minibatch(X, y, 13, initial_point = c(-10, -10))
 data_minibatch_1_15 <- lm_minibatch(X, y, 13, initial_point = c(-100, 100))
+data_minibatch_1_100 <- lm_minibatch(X, y, 100, initial_point = c(-100, 100))
 
 plot_minibatches_2_params(data_minibatch_1_1, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 plot_minibatches_2_params(data_minibatch_1_2, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 plot_minibatches_2_params(data_minibatch_1_13, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 plot_minibatches_2_params(data_minibatch_1_15, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
+plot_minibatches_2_params(data_minibatch_1_100, beta_0, beta_1, model$coefficients[1], model$coefficients[2])
 
 
 data2 <- tibble(x = rnorm(1000009),
@@ -219,9 +230,22 @@ plot_minibatches_2_params(data_minibatch_2_100, beta_0, beta_1, model$coefficien
 
 
 
+data_3 <- tibble(x1 = rnorm(N),
+                x2 = rnorm(N),
+                y = beta_0 + beta_1*x1 + beta_2*x2 + rnorm(N))
+
+
+data_minibatch_3_100 <- lm_minibatch(data_3[,1:2], data_3$y, 100, initial_point = c(-10, -10, 0))
 
 
 
+data_4 <- tibble(
+  x1 = rnorm(N),
+  x2 = rnorm(N),
+  x3 = rnorm(N),
+  y = 1 + 1*x1 + 2*x2 + 3*x3 + rnorm(N))
+
+data_minibatch_4_100 <- lm_minibatch(data_4[,1:3], data_4$y, 100, initial_point = c(-10, -10, 0, 0))
 
 
 
