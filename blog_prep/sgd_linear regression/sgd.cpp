@@ -10,6 +10,17 @@ using namespace RcppArmadillo;
 
 
 // [[Rcpp::export]]
+double norm(NumericVector g){
+  int m = g.length();
+  NumericVector g2(m);
+  for(int i = 0; i < m; i++){
+    g2(i) = g(i)*g(i);
+  }
+  return(sqrt(sum(g2)));
+}
+
+
+// [[Rcpp::export]]
 NumericVector gradient(NumericMatrix data, NumericVector betas){
   int n = data.nrow();
   int p = data.ncol(); // number of coefficients (including intercept)
@@ -57,16 +68,6 @@ NumericVector gradient(NumericMatrix data, NumericVector betas){
 }
 
 // [[Rcpp::export]]
-double norm(NumericVector g){
-  int m = g.length();
-  NumericVector g2(m);
-  for(int i = 0; i < m; i++){
-    g2(i) = g(i)*g(i);
-  }
-  return(sqrt(sum(g2)));
-}
-
-// [[Rcpp::export]]
 List epoch_update(NumericMatrix data, NumericVector betas_in, double alpha, int n_epoch, int minibatch_size){
   // Important: we have to clone the vector, otherwise, the original input vector 
   // will be modified in the R environment because they have the same name.
@@ -80,7 +81,7 @@ List epoch_update(NumericMatrix data, NumericVector betas_in, double alpha, int 
   else num_iters = floor(n/minibatch_size) + 1;
   // cout << "num_iters = " << num_iters <<"\n";
   // int num_iters = floor(n/minibatch_size) + 1;
-  NumericMatrix epoch_values(num_iters, 5);
+  NumericMatrix epoch_values(num_iters, p+3);
   
   
   for(int k = 0; k < num_iters; k++){
@@ -123,9 +124,15 @@ List epoch_update(NumericMatrix data, NumericVector betas_in, double alpha, int 
     }
     epoch_values(k, 0) = n_epoch;
     epoch_values(k, 1) = k + 1;
-    epoch_values(k, 2) = betas(0);
-    epoch_values(k, 3) = betas(1);
-    epoch_values(k, 4) = g_norm;
+    epoch_values(k, 2) = g_norm;
+    
+    for(int j = 0; j < p; j++){
+      epoch_values(k, j+3) = betas(j);
+    }
+    
+    // epoch_values(k, 3) = betas(0);
+    // epoch_values(k, 4) = betas(1);
+    
   } // end for
   
   List ret;
