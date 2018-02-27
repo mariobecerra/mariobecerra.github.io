@@ -9,6 +9,9 @@ using namespace RcppArmadillo;
 // [[Rcpp::depends(RcppArmadillo)]]
 
 
+//////////////////////////
+/////// FUNCTION 1
+//////////////////////////
 // [[Rcpp::export]]
 double norm(NumericVector g){
   // Receives a numeric vector and returns L2 norm
@@ -21,6 +24,13 @@ double norm(NumericVector g){
 }
 
 
+
+
+
+
+//////////////////////////
+/////// FUNCTION 2
+//////////////////////////
 // [[Rcpp::export]]
 NumericVector gradient(NumericMatrix data, NumericVector betas){
   // Receives a data matrix and a vector of parameters.
@@ -58,6 +68,14 @@ NumericVector gradient(NumericMatrix data, NumericVector betas){
   return g_out;
 }
 
+
+
+
+
+
+//////////////////////////
+/////// FUNCTION 3
+//////////////////////////
 // [[Rcpp::export]]
 List epoch_update(NumericMatrix data, NumericVector betas_in, double alpha, int n_epoch, int minibatch_size){
   // Updates the value of the parameters based on the gradients of minibatch iteration
