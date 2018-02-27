@@ -215,7 +215,8 @@ plots_size <- lapply(0:8, function(i){
   } else{
     mod_minibatch <- lm_minibatch(X, y, N, initial_point = c(-1, -1)) 
   }
-  gg <- plot_minibatches_2_params(mod_minibatch)
+  gg <- plot_minibatches_2_params(mod_minibatch) +
+    ggtitle(paste("Size:", mb_size))
   return(gg)
 })
 
@@ -233,14 +234,42 @@ grid.arrange(plots_size[[1]],
 ```
 
 ```{r}
-data2 <- tibble(x = rnorm(1000009),
-               y = beta_0 + beta_1*x + rnorm(1000009))
+data_2 <- tibble(x = rnorm(2^21),
+               y = 1 + 3*x + rnorm(2^21, 0, 0.5))
+
+minibatch_times <- tibble(log_data_size =seq(10, 20),
+                              seconds = 0)
+
+for(i in 1:nrow(minibatch_times)){
+  log_size = minibatch_times$log_data_size[i]
+  dat = data_2[1:2^log_size,]
+  time = system.time(lm_minibatch(dat$x, dat$y, 100))
+  minibatch_times$seconds[i] = time[3]
+}
 
 
-mod_minibatch_2_100 <- lm_minibatch(data2$x, data2$y, 100, initial_point = c(-10, -10))
-# mod_minibatch_2_all <- lm_minibatch(data2$x, data2$y, nrow(data2), initial_point = c(-10, -10))
-# Usando como tolerancia en las betas 1e-15, llegó a las 3000 iteraciones usando el dataset completo y tardó 7 minutos (420 seg)
-plot_minibatches_2_params(mod_minibatch_2_100)
+
+
+if("gradient_descent_times.rds" %in% list.files("cache/")){
+  gradient_descent_times <- readRDS("cache/gradient_descent_times.rds")
+} else {
+  gradient_descent_times <- tibble(log_data_size =seq(10, 20),
+                                   seconds = 0)
+  for(i in 1:nrow(minibatch_times)){
+    log_size = gradient_descent_times$log_data_size[i]
+    dat = data_2[1:2^log_size,]
+    time = system.time(lm_minibatch(dat$x, dat$y, nrow(dat)))
+    gradient_descent_times$seconds[i] = time[3]
+  }
+  saveRDS(gradient_descent_times, "cache/gradient_descent_times.rds")
+}
+
+
+
+# mod_minibatch_2_100 <- lm_minibatch(data2$x, data2$y, 100, initial_point = c(-10, -10))
+# # mod_minibatch_2_all <- lm_minibatch(data2$x, data2$y, nrow(data2), initial_point = c(-10, -10))
+# # Usando como tolerancia en las betas 1e-15, llegó a las 3000 iteraciones usando el dataset completo y tardó 7 minutos (420 seg)
+# plot_minibatches_2_params(mod_minibatch_2_100)
 
 
 
