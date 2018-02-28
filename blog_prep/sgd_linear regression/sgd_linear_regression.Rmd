@@ -6,9 +6,84 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = T)
 ```
 
+In a [previous post](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html) I showed how to implement gradient descent and stochastic gradient descent for linear regression and logistic regression. The problem with that implementation was that I used R's for loops which can be quite slow. In this version, I implement the functions in Rcpp, reducing the running time considerably.
+
+I also implement a more general algorithm, called minibatch gradient descent. I do the implementation for the case of linear regression.
+
+## Loss function optimization
+
+As mentioned in [the previous post](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html), in statistical learning, one usually wants to find the parameters that minimize a loss function, which almost always has to do with the error of the model we're using.
+
+The general problem of unrestricted optimization is
+
+\begin{equation}
+  \min_{\theta \in \mathbb{R}^p} L(\theta).
+\end{equation}
+
+Usually, $L$ is a convex loss function such as quadratic loss, and $\theta$ is a parameter or vector of parameters.
+
+## Gradient descent (GD)
+
+I give a quick reminder of how GD works, but in [my previous post](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html), it is more thoroughly explained. 
+
+In each iteration of GD, the algorithm searches for a direction in which to go and then update the current value in accordance to that direction. That is, in the $k$-th iteration, we have a value $\theta_k$, and we look for a direction $p_k$ to update to a new value $\theta_{k+1} = \theta_k + \alpha_k p_k$, where $\alpha_k > 0$ is the 'distance' that the algorithm moves toward direction $p_k$. Once that the value of the parameter is updated, we find a new direction in which to move forward and then update the parameter value again. This is done until a stopping criteria is met, this usually being that the gradient vector norm is smaller than a certain small positive scalar. The direction $p_k$ in which the algorithm moves is the maximum descent direction, that is, the negative of the gradient $-\nabla L(\theta_k)$. So, in each iteration we have
+
+\begin{equation}
+  \theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k).
+\end{equation}
+
+In linear regression we want to minimize the quadratic loss function
+
+\begin{equation}
+L(x, \beta) = \frac{1}{n} \sum_{i = 1}^n \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2.
+\end{equation}
+
+Taking its partial derivatives, we have for each $j \in \left\{1, ..., p \right\}$
+
+$$
+\frac{\partial L}{\partial \beta_j} = 
+-\frac{2}{n} \sum_{i = 1}^n \left( x_{ij} \ell_i(x, \beta) \right)
+$$
+
+where $x_{i1} = 1$ for each $i \in \left\{1, ..., n \right\}$ and
+
+$$
+\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
+$$
+
+From here, we have that the gradient descent direction for each iteration is
+
+$$
+\nabla_{\beta} L(x, \beta) = \left( \frac{\partial L}{\partial \beta_0}, ..., \frac{\partial L}{\partial \beta_p} \right)^T.
+$$
+
+## Minibatch gradient descent
+
+As previously mentioned, in statistical learning it is common to find the need to solve optimization problems of the form
+
+\begin{equation}
+\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
+L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
+\end{equation}
+
+Gradient descent uses iterations in the form
+
+\[
+\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
+\]
+
+which involves evaluating $n$ gradients and then taking an average. In the cases of big scale machine learning, the number of observations $n$ is really big, so computing all of those gradients in each iteration is expensive. 
+
+Minibatch gradient descent solves this problem because the number of gradients to compute doesn't depend on $n$, it is constant. In minibatch gradient descent, one chooses a fixed integer $l$, then the dataset is divided in batches if size $l$, where the values in each batch are randomly chosen. Then, each of these batches are used to compute the gradient and update the values of the parameters. Usually $l$ is a small number compared to the size of a big dataset, but big enough so that the gradient estimation isn't so noisy, such as $l = 32$ or $l = 100$. This way, each iteration is cheaper because it involves the computation of only $l$ gradients instead of $n$. Stochastic gradient descent (SGD) is just minibatch gradient descent with $l = 1$.
+
+<!-- An epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once. -->
+
+## Examples
+
+I implemented minibatch gradient descent for linear regression using Rcpp, a package that compiles C++ code and then can be executed in R.
 
 ```{r}
 library(gridExtra)
@@ -16,78 +91,21 @@ library(Rcpp)
 library(tidyverse)
 ```
 
+The following lines show the C++ code that is compiled in R. The code has three main functions, the first one computes the L2 norm of a vector, the second one computed the gradient of the loss function of some data with respect to the beta parameters; and the last one (epoch_update) runs an iteration of minibatch gradient descent over the whole dataset.
 
-In a [previous post](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html) I showed how to implement gradient descent and stochastic gradient descent for linear regression and logistic regression. The problem with that implementation was that I used R's for loops which can be quite slow. In this version, I implement the functions in Rcpp, reducing the running time considerably.
-
-
-# Stochastic gradient descent (SGD)
-
-In statistical learning it is common to find the need to solve optimization problems of the form
-
-\begin{equation}
-\min_{\theta \in \mathbb{R}^p} L(x, \theta), \quad \text{with} \, \, 
-L(\theta) = \frac{1}{n} \sum_{i = 1}^n { \psi_i(x, \theta) }.
-\end{equation}
-
-In both past examples, the loss functions that we wanted to minimize were expressed in that way. Gradient descent uses iterations in the form
-
-\[
-\theta_{k+1} = \theta_k - \alpha_k \nabla L(\theta_k) :=\theta_k - \frac{\alpha_k}{n} \sum_{i = 1}^n \nabla \psi_i(\theta_k),
-\]
-
-which involves evaluating $n$ gradients and then taking an average. In the cases of big scale machine learning, the number of observations $n$ is really big, so computing all of those gradients in each iteration is expensive. That's why methods such as SGD come up, methods where the number of gradients to compute doesn't depend on $n$, it is constant. SGD uses iterations of the form
-
-\[
-\theta_{k+1} = \theta_k - \alpha_k \nabla \psi_{i_k}(\theta_k),
-\]
-
-where $i_k \in \left\{1, 2, ..., n \right\}$ is randomly chosen. The gradient $\nabla \psi_{i_k}(\theta_k)$ is an unbiased estimator of $\nabla L(\theta_k)$. This way, each iteration is really cheap because it involves the computation of only one gradient. It can happen that some $\nabla \psi_{i_k}(\theta_k)$ in particular doesn't give a direction of descent from $\theta_k$, but on average we do get descent directions, such that the sequence $\left\{ \theta_0, \theta_1, ... \right\}$ can be guided to a minimizer $\theta^*$.
-
-### SGD for linear regression: 
-
-To show this method, the same two examples are implemented using SGD.
-
-##### **Linear regression**
-
-
-As we saw before, we want to minimize the quadratic loss function. Here, each $\psi_i(x, \theta)$ is
-
-$$
-\psi_i(x, \theta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right)^2 = \ell_i^2(x, \beta),
-$$ 
-
-with $\ell_i(x, \beta)$ defined earlier as
-
-$$
-\ell_i(x, \beta) = \left( y_i - \beta_0 - \beta_1 x_{i1} - ...  \beta_p x_{ip} \right).
-$$
-We can see that the partial derivative of $\psi_i(x, \beta)$ with respect to each $\beta_j$ with $j \in \left\{ 0, ..., p \right\}$ is
-
-\[
-\frac{\partial \psi_i}{\partial \beta_j} = \frac{\partial \ell^2_i}{\partial \beta_j} = -2 x_{ij} \ell_i(x, \beta),
-\]
-
-so, the direction of descent in each iteration is
-
-\[
-\nabla_{\beta} \psi_i(x, \beta) = 
-\left( \frac{\partial \psi_i}{\partial \beta_0}, ..., \frac{\partial \psi_i}{\partial \beta_p} \right).
-\]
-
-Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stopping rule was that the norm of the gradient $\nabla_{\beta} L(x, \beta)$ was less than $0.000001$, or that there were more than 300 iterations or that the squared norm of the differences of the parameter vector from one iteration to the next (i.e. $||\beta^{k+1} - \beta^k||^2_2$) was less than $10^{-15}$. 
-
-In SGD, an epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once.
-
-The following code shows the functions implemented to get SGD running. I use for loops, which I know is not the best idea in R, but it's to illustrate. Maybe later I'll implement it with Rcpp and see the difference in speed.
+```{r engine='bash', comment=''}
+# Show C++ file content
+cat sgd.cpp
+```
 
 ```{r}
-# Show C++ file content
-cat(readLines("sgd.cpp"), sep = '\n')
+# cat(readLines("sgd.cpp"), sep = '\n')
 
 # Compile with Rcpp
 sourceCpp("sgd.cpp")
 ```
 
+In the following lines, we can see the function that calls epoch_update iteratively to update the beta parameter values. It receives a matrix $X$ that represents the covariables, and a vector $y$ that represents the response variable.
 
 ```{r}
 ## Function that performs minibatch gradient descent on dataset
@@ -97,60 +115,75 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
                          seed = 201802,
                          alpha = 0.001,
                          g_norm_tol = 1e-8,
-                         beta_diff_norm_tol = 1e-8){
+                         beta_diff_norm_tol = 1e-8,
+                         verbose = F){
   
-  # Start the algorithm
-  data_matrix = as.matrix(cbind(X, y))
-  n <- nrow(data_matrix)
+  # Parameters:
+  # X: covariate data
+  # y: response variable
+  # minibatch_size: Minibatch size
+  # max_it: maximum number of iterations of the algorithm
+  # initial_point: initial point for the beta parameters
+  # seed: seed for the data shuffling face
+  # alpha: learning rate
+  # g_norm_tol: gradient norm tolerance
+  # beta_diff_norm_tol: beta difference norm tolerance
+  # verbose: whether to print each iteration number or not
+  
+  data_matrix = as.matrix(cbind(X, y)) # Creates a data matrix
+  n <- nrow(data_matrix) # number of observations
   p <- ncol(data_matrix) # number of parameters (including intercept)
   
+  # Default initial point
   if(is.na(initial_point[1])) initial_point = rep(0.0, p)
   
+  # Number of iterations according to minibatch size
   if(n %% minibatch_size == 0) {
     num_iters = floor(n/minibatch_size)
   } else {
     num_iters = floor(n/minibatch_size) + 1
   }
 
+  # Two daa frames that keep track of the values of the parameters during the execution of the algorithm.
+  # This may consume a lot of memory if the data has too many observations and
+  # the max_it parameter is too big
   betas_df <- as.data.frame(matrix(rep(0, max_it*num_iters*p), ncol = p))
   names(betas_df) <- paste0("beta_", 0:(p-1))
-  
   iteration_values <- tibble(
     epoch = rep(0, max_it*num_iters),
     obs = 1:(max_it*num_iters),
     gradient_norm = rep(0, max_it*num_iters)) %>% 
     bind_cols(betas_df)
   
-  # observation_control <- tibble(
-  #   obs = 1:(max_it*num_iters),
-  #   shuffle_ix = rep(0, max_it*num_iters))
-  
   i = 0
   betas <- initial_point
+  # Start the algorithm
   while(i < max_it){
     i = i + 1
-    print(i)
-    # Shuffle data and keep a track of reordered observations
+    if(verbose) print(i)
+    # Shuffle data
     set.seed(seed)
     shuffle_ix <- sample(nrow(data_matrix))
-    # observation_control$shuffle_ix[(i*num_iters - num_iters + 1):(i*num_iters)] <- shuffle_ix
     shuffled_data = data_matrix[shuffle_ix,]
+    # Compute beta parameters for one epoch
     epoch_betas <- epoch_update(shuffled_data, betas, alpha, i, minibatch_size)
     
-    #epoch_betas_for$betas
-    #epoch_betas$betas
-    
+    # Update beta parameters
     betas_old <- betas
     betas <- epoch_betas$betas
+    # Save values of each iteration in the output dataframe
     epoch_values_temp <- as.data.frame(epoch_betas$epoch_values)
     names(epoch_values_temp) <- names(iteration_values)
     iteration_values[((i-1)*num_iters + 1):((i)*num_iters),] <- epoch_values_temp
+    # Compute gradient norm
     g_norm <- epoch_betas$epoch_values[num_iters, 3]
-    # g_norm <- epoch_betas$epoch_values$gradient_norm[n]
+    # Compute the norm of the beta differences
     dif_betas_norm <- sum((betas - betas_old)^2)
+    # If the gradient norm is close to zero, or the parameters hardly change, exit the algorithm
     if(g_norm < g_norm_tol | dif_betas_norm < beta_diff_norm_tol) break
   }
   
+  # Keep only the values of the valid iterations
   iteration_values <- iteration_values[1:(i*num_iters),]
   iteration_values$it <- 1:nrow(iteration_values)
   
@@ -161,65 +194,72 @@ lm_minibatch <- function(X, y, minibatch_size = 15,
 }
 
 
-# Function to plot the values of the parameters in a simple linear regression (2 parameters)
+```
+
+## Examples
+
+I show the implementation in three different examples, each of which achieves something different. The first one, shows how minibatch size ($l$) affects the result, the second one compares the running time of minibatch gradient descent and normal gradient descent on different sizes of a dataset, and the last one shows the implementation on the diamonds dataset, a dataset used commonly to show linear regression.
+
+#### Example 1
+
+In this example, we see how the minibatch size affects the algorithm. First, we write a function that, given the output of the lm_minibatch function, computes the values of $\beta_0$ and $\beta_1$ on each iteration of the algorithm.
+
+```{r}
+# Function that plots the values of the parameters in each iteration.
+# It only works for simple linear regression (2 parameters).
 plot_minibatches_2_params <- function(lm_minibatch
                                       # beta_0, beta_1, coef_1, coef_2
                                       ){
   data <- lm_minibatch$iteration_values
   if(length(lm_minibatch$beta) == 2) {
-    # Plots all iterations in all epochs
+    n = nrow(data)
+    val_1 = data$beta_0[n]
+    val_2 = data$beta_1[n]
     gg <- data %>% 
       ggplot(aes(beta_0, beta_1)) +
       xlab("Beta 0") +
       ylab("Beta 1") +
       geom_path(size = 0.1, color = 'black') +
       geom_point(size = 0.01, color = 'black', alpha = 0.2) +
-      # geom_point(aes(x, y),
-      #            data = tibble(x = beta_0,
-      #                          y = beta_1)) +
-      # geom_point(aes(x, y),
-      #            data = tibble(x = coef_1,
-      #                          y = coef_2),
-      #            shape = 'x',
-      #            size = 5,
-      #            color = 'blue') +
+      geom_point(aes(x, y),
+                 data = tibble(x = val_1,
+                               y = val_2),
+                 shape = 'x',
+                 size = 5,
+                 color = 'blue') +
       theme_bw()
-    # theme(panel.grid.minor = element_blank())
     return(gg)
   } else{
     return("Error")
   }
 }
-
-
-
-
 ```
+
+Next, we create some fake data to run the algorithm. We create a dataset with 500 observations.
 
 ```{r}
 N <- 500
 beta_0 <- -2
 beta_1 <- 4
-beta_2 <- 2
 
 data <- tibble(x = rnorm(N),
                y = beta_0 + beta_1*x + rnorm(N, 0, 0.2))
 
-X = data[,"x"]
-y = data$y
+```
 
+Now, we run the algorithm with different minibatch sizes. These sizes go from 1 to 256, growing in powers of 2. The plots show the iterations for each minibatch size. It can be seen that with minibatch size of 1 or 2, the iterations are very noisy, but as the minibatch size grows, these behave less erratically.
+
+```{r}
+# Runs the algorithm for different minibatch sizes
 plots_size <- lapply(0:8, function(i){
   mb_size = 2^i
-  if(mb_size <= N){
-    mod_minibatch <- lm_minibatch(X, y, 2^i, initial_point = c(-1, -1)) 
-  } else{
-    mod_minibatch <- lm_minibatch(X, y, N, initial_point = c(-1, -1)) 
-  }
+  mod_minibatch <- lm_minibatch(data[,"x"], data$y, 2^i, initial_point = c(-1, -1)) 
   gg <- plot_minibatches_2_params(mod_minibatch) +
     ggtitle(paste("Size:", mb_size))
   return(gg)
 })
 
+# Didn't bother to look for a more elegant way to do this
 grid.arrange(plots_size[[1]],
              plots_size[[2]],
              plots_size[[3]],
@@ -233,99 +273,229 @@ grid.arrange(plots_size[[1]],
 
 ```
 
+#### Example 2
+
+In this example, we see how the running time of normal gradient descent increases when the dataset size increases, while minibatch gradient descent time remains constant. First, we create a dataset with $2^{21} = 2,097,152$ observations.
+
 ```{r}
+# Create dataset of considerable size
 data_2 <- tibble(x = rnorm(2^21),
                y = 1 + 3*x + rnorm(2^21, 0, 0.5))
 
-minibatch_times <- tibble(log_data_size =seq(10, 20),
-                              seconds = 0)
+```
 
-for(i in 1:nrow(minibatch_times)){
-  log_size = minibatch_times$log_data_size[i]
-  dat = data_2[1:2^log_size,]
-  time = system.time(lm_minibatch(dat$x, dat$y, 100))
-  minibatch_times$seconds[i] = time[3]
+Now, we run the algorithm for different subsets of the data and measure the running time. We run it for minibatch sizes of 10, 100, 1000, and the whole dataset. The dataset sizes used are $1024$, $2048$, $4096$, $8192$, $16384$, $32768$, $65536$, $131072$, $262144$, $524288$ and $1048576$.
+
+```{r}
+# Create folder to save objects and cache
+dir.create("cache", showWarnings = FALSE)
+
+# The if-else checks if this code has been run before and loads 
+# the resulting dataset if it has.
+# If it hasn't been run, then it executes it and saves the output.
+if("minibatch_times_10.rds" %in% list.files("cache/")){
+  minibatch_times_10 <- readRDS("cache/minibatch_times_10.rds")
+} else {
+  # Output dataframe
+  minibatch_times_10 <- tibble(
+    log_data_size =seq(10, 20),
+    seconds = 0,
+    n_epoch = 0,
+    beta_0 = 0,
+    beta_1 = 0)
+  
+  # Runs minibatch gradient descent with minibatches of size 10 for different sizes of dataset
+  for(i in 1:nrow(minibatch_times_10)){
+    # Chooses the size of the dataset
+    log_size = minibatch_times_10$log_data_size[i]
+    # subsets the data from the bigger dataset
+    dat = data_2[1:2^log_size,]
+    # computes the runnig time
+    time = system.time(temp <- lm_minibatch(dat$x, dat$y, 10, max_it = 60))
+    # Number of epochs run
+    n_epoch_temp = max(unique(temp$iteration_values$epoch))
+    # Fill the output dataframe
+    minibatch_times_10$seconds[i] = time[3]
+    minibatch_times_10$n_epoch[i] = n_epoch_temp
+    minibatch_times_10$beta_0[i] = temp$betas[1]
+    minibatch_times_10$beta_1[i] = temp$betas[2]
+  }
+  saveRDS(minibatch_times_10, "cache/minibatch_times_10.rds")
 }
 
+
+if("minibatch_times_100.rds" %in% list.files("cache/")){
+  minibatch_times_100 <- readRDS("cache/minibatch_times_100.rds")
+} else {
+  minibatch_times_100 <- tibble(
+    log_data_size =seq(10, 20),
+    seconds = 0,
+    n_epoch = 0,
+    beta_0 = 0,
+    beta_1 = 0)
+  
+  # Runs minibatch gradient descent with minibatches of size 100 for different sizes of dataset
+  for(i in 1:nrow(minibatch_times_100)){
+    # Chooses the size of the dataset
+    log_size = minibatch_times_100$log_data_size[i]
+    # subsets the data from the bigger dataset
+    dat = data_2[1:2^log_size,]
+    # computes the runnig time
+    time = system.time(temp <- lm_minibatch(dat$x, dat$y, 100, max_it = 500))
+    n_epoch_temp = max(unique(temp$iteration_values$epoch))
+    # Fill the output dataframe
+    minibatch_times_100$seconds[i] = time[3]
+    minibatch_times_100$n_epoch[i] = n_epoch_temp
+    minibatch_times_100$beta_0[i] = temp$betas[1]
+    minibatch_times_100$beta_1[i] = temp$betas[2]
+  }
+  saveRDS(minibatch_times_100, "cache/minibatch_times_100.rds")
+}
+
+
+if("minibatch_times_1000.rds" %in% list.files("cache/")){
+  minibatch_times_1000 <- readRDS("cache/minibatch_times_1000.rds")
+} else {
+  # Runs minibatch gradient descent with minibatches of size 1000 for different sizes of dataset
+  minibatch_times_1000 <- tibble(
+    log_data_size =seq(10, 20),
+    seconds = 0,
+    n_epoch = 0,
+    beta_0 = 0,
+    beta_1 = 0)
+  
+  for(i in 1:nrow(minibatch_times_1000)){
+    log_size = minibatch_times_1000$log_data_size[i]
+    dat = data_2[1:2^log_size,]
+    time = system.time(temp <- lm_minibatch(dat$x, dat$y, 1000, max_it = 2000))
+    n_epoch_temp = max(unique(temp$iteration_values$epoch))
+    minibatch_times_1000$seconds[i] = time[3]
+    minibatch_times_1000$n_epoch[i] = n_epoch_temp
+    minibatch_times_1000$beta_0[i] = temp$betas[1]
+    minibatch_times_1000$beta_1[i] = temp$betas[2]
+  }
+  saveRDS(minibatch_times_1000, "cache/minibatch_times_1000.rds")
+}
 
 
 
 if("gradient_descent_times.rds" %in% list.files("cache/")){
   gradient_descent_times <- readRDS("cache/gradient_descent_times.rds")
 } else {
+  # Runs gradient descent for different sizes of dataset
   gradient_descent_times <- tibble(log_data_size =seq(10, 20),
-                                   seconds = 0)
-  for(i in 1:nrow(minibatch_times)){
+                                   seconds = 0,
+                                   n_epoch = 0)
+  for(i in 1:nrow(gradient_descent_times)){
     log_size = gradient_descent_times$log_data_size[i]
     dat = data_2[1:2^log_size,]
-    time = system.time(lm_minibatch(dat$x, dat$y, nrow(dat)))
+    time = system.time(temp <- lm_minibatch(dat$x, dat$y, nrow(dat), max_it = 300000))
+    n_epoch_temp = max(unique(temp$iteration_values$epoch))
     gradient_descent_times$seconds[i] = time[3]
+    gradient_descent_times$n_epoch[i] = n_epoch_temp
   }
   saveRDS(gradient_descent_times, "cache/gradient_descent_times.rds")
 }
 
+```
 
+Now, we visualize the running time of each algorithm for each dataset size. We can see that minibatch gradient descent's running time remains constant, while gradient descent's time grows as the dataset size grows. There is no appreciable difference between the 3 variants of minibatch gradient descent.
 
-# mod_minibatch_2_100 <- lm_minibatch(data2$x, data2$y, 100, initial_point = c(-10, -10))
-# # mod_minibatch_2_all <- lm_minibatch(data2$x, data2$y, nrow(data2), initial_point = c(-10, -10))
-# # Usando como tolerancia en las betas 1e-15, llegó a las 3000 iteraciones usando el dataset completo y tardó 7 minutos (420 seg)
-# plot_minibatches_2_params(mod_minibatch_2_100)
-
-
-
-data_3 <- tibble(x1 = rnorm(N),
-                x2 = rnorm(N),
-                y = -2 + 4*x1 + 2*x2 + rnorm(N))
-
-
-mod_minibatch_3_100 <- lm_minibatch(data_3[,1:2], data_3$y, 100, initial_point = c(-10, -10, 0))
-mod_minibatch_3_100$betas
-
-
-data_4 <- tibble(
-  x1 = rnorm(N),
-  x2 = rnorm(N),
-  x3 = rnorm(N),
-  y = 1 + 1*x1 + 2*x2 + 3*x3 + rnorm(N))
-
-mod_minibatch_4_100 <- lm_minibatch(data_4[,1:3], data_4$y, 100, initial_point = c(-10, -10, 0, 0))
-mod_minibatch_4_100$betas
-
+```{r}
+gradient_descent_times %>% 
+  mutate(type = "GD") %>% 
+  bind_rows(
+    minibatch_times_10 %>% 
+      select(-beta_0, -beta_1) %>% 
+      mutate(type = "minibatch_10")
+  ) %>% 
+  bind_rows(
+    minibatch_times_100 %>% 
+      select(-beta_0, -beta_1) %>% 
+      mutate(type = "minibatch_100")
+  ) %>% 
+  bind_rows(
+    minibatch_times_1000 %>% 
+      select(-beta_0, -beta_1) %>% 
+      mutate(type = "minibatch_1000")
+  ) %>% 
+  ggplot(aes(x = log_data_size, y = seconds, group = type, color = type)) +
+  geom_point() +
+  geom_line() +
+  xlab("Data size (log 2 scale)") +
+  ylab("Time (seconds)") +
+  theme_bw()
 ```
 
 
+#### Example 3
 
-We can see that in the second figure that the directions go zigzagging, but in the end reach the final solution. In GD the directions were more uniform.
-
-In both figures there's once more the big dot that represents the real value of the parameters ($\beta_0=2$ y $\beta_1 = 1$) and the x that represents the value from the lm package, but the second image isn't that clear because of all the noise in the directions.
-
-
-# Diamonds dataset
+The last example uses a dataset that contains the prices and other attributes of close to 54,000 diamonds. It is accessible through the ggplot2 package. We load the dataset and look at the first rows.
 
 ```{r}
 
 data(diamonds)
 head(diamonds)
+```
 
+For this examples, we eill adjust a linear model on the logarithm of the price, and use as covariables the log of the weight (carat) of the diamond and the clarity, used as a one-hot dummy variable.
+
+```{r}
+
+# Select and transform the variables we're gonna use
 data_diamonds_temp <- diamonds %>% 
   select(-x, -y, -z, -depth, -table, -cut, -color) %>% 
   mutate(y = log(price), x2 = log(carat), clarity = as.factor(as.character(clarity)))
 
+# Transform clarity to a one-hot matrix
 clarity_dummy <- dummies::dummy(x = data_diamonds_temp$clarity) %>% as.data.frame()
 names(clarity_dummy) <- paste0("x1_", 1:ncol(clarity_dummy))
 
+# Create the dataset of the log-carat and summy-transformed clarity
 data_diamonds <- clarity_dummy %>% 
   bind_cols(
     data_diamonds_temp %>% 
       select(x2, y)
   )
   
-mod_minibatch_diamonds_100 <- lm_minibatch(data_diamonds[,1:9], data_diamonds$y, minibatch_size = 100)
-# betas_diamonds <- as.numeric(mod_minibatch_diamonds_100[nrow(mod_minibatch_diamonds_100), grepl("beta", names(mod_minibatch_diamonds_100))])
+# Look at the transformed data
+head(data_diamonds)
+
+```
+
+We now run the minibatch gradient descent algorithm with a minibatch size of 32.
+
+```{r}
+# Run algorithm
+mod_minibatch_diamonds_100 <- lm_minibatch(data_diamonds[,1:9], data_diamonds$y, 
+                                           minibatch_size = 32, 
+                                           beta_diff_norm_tol = 1e-11)
+```
+
+The following plot shows the value of the parameters in each iteration. All of them appear to have converged to a fixed value.
+
+```{r}
+mod_minibatch_diamonds_100$iteration_values %>% 
+  select(grep("beta", names(.)), it) %>% 
+  gather(param, value, -it) %>% 
+  ggplot(aes(it, value, group = param)) +
+  geom_line(size = 0.5, alpha = 0.7) +
+  facet_wrap(~param, scales = 'free_y', ncol = 3) +
+  theme_bw()
+```
+
+We save the beta parameters in a vector and then make predictions on the same dataset.
+
+```{r}
+# Save parameters
 betas_diamonds <- mod_minibatch_diamonds_100$betas
-
+# Prediction
 diamonds_preds <- as.matrix(cbind(rep(1, nrow(data_diamonds)), data_diamonds[,1:9])) %*% betas_diamonds
+```
 
+Then, I create a dataframe of the predictions and the real values to see them in a scatter plot, showing a good fit.
+
+```{r}
 tibble(pred = as.numeric(diamonds_preds),
        real = data_diamonds$y) %>% 
   ggplot() +
@@ -333,13 +503,10 @@ tibble(pred = as.numeric(diamonds_preds),
   geom_abline(slope = 1) +
   theme_bw()
 
-mod_minibatch_diamonds_100$iteration_values %>% 
-  select(grep("beta", names(.)), it) %>% 
-  gather(param, value, -it) %>% 
-  ggplot(aes(it, value, group = param)) +
-  geom_line(size = 0.5, alpha = 0.7) +
-  facet_wrap(~param, scales = 'free_y') +
-  theme_bw()
-
 ```
+
+## Conclusions
+
+In this post I implemented minibatch gradient descent in Rcpp, reducing considerably the running time compared to the implementation in base R. I showed the effect the size of the minibatch has on the algorithm, I showed how the running time remains constant with datasets of increasing sizes, and I showed that the implementation yields a good fit in the diamonds dataset.
+
 
