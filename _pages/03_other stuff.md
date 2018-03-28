@@ -37,6 +37,7 @@ permalink: /other/
 
 ### 2018
 
+* "Naked Statistics: Stripping the Dread from the Data" by Charles Wheelan
 * "The Grapes of Wrath" by John Steinbeck
 * "The Catcher in the Rye" by J.D. Salinger
 * "The Casual Vacancy" by J.K. Rowling
