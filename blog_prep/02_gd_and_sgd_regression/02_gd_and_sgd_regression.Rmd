@@ -500,7 +500,9 @@ Once again, the vector of initial parameters was $\beta^0 = (0, 0)^T$.  The stop
 
 In SGD, an epoch is a set of $n$ accesses to the dataset. That is, in each epoch, the gradients of all elements in the dataset have been computed once.
 
-The following code shows the functions implemented to get SGD running. I use for loops, which I know is not the best idea in R, but it's to illustrate. Maybe later I'll implement it with Rcpp and see the difference in speed.
+The following code shows the functions implemented to get SGD running. I use for loops, which I know is not the best idea in R, but it's to illustrate. Maybe later I'll implement it in Rcpp and see the difference in speed.
+
+(Update: I implemented it in Rcpp and it is much faster. [Blog post here](https://mariobecerra.github.io/rblogging/2018/02/27/sgd_linear_regression.html)).
 
 ```{r}
 # Gradient for an observation
