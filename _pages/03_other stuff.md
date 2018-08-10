@@ -37,6 +37,13 @@ permalink: /other/
 
 ### 2018
 
+* "The Cuckoo's Calling" by Robert Galbraith / J.K. Rowling
+* "To Kill a Mockingbird" by Harper Lee
+* "The Mystery Knight" by George R.R. Martin
+* "The Sworn Sword" by George R.R. Martin
+* "The Hedge Knight" by George R.R. Martin
+* "The Stranger" by Albert Camus
+* "The Three-Body Problem" by Cixin Liu
 * "Naked Statistics: Stripping the Dread from the Data" by Charles Wheelan
 * "The Grapes of Wrath" by John Steinbeck
 * "The Catcher in the Rye" by J.D. Salinger
@@ -45,8 +52,8 @@ permalink: /other/
 ### 2017
 
 * "The Girl Who Takes an Eye for an Eye" by David Lagercrantz
-* "The Girl in the Spider's Web" by David Lagercrantz 
-* "The Signal and the Noise" by Nate Silver 
+* "The Girl in the Spider's Web" by David Lagercrantz
+* "The Signal and the Noise" by Nate Silver
 * "Pedro Páramo" by Juan Rulfo
 * "Fooled by Randomness" by Nassim Nicholas Taleb
 * "The Unbearable Lightness of Being" by Milan Kundera
@@ -58,9 +65,9 @@ permalink: /other/
 * "Undermajordomo Minor" by Patrick deWitt
 * "The Simpsons and Their Mathematical Secrets" by Simon Singh
 * "The Theory That Would Not Die: How Bayes' Rule Cracked the Enigma Code, Hunted Down Russian Submarines, and Emerged Triumphant from Two Centuries of Controversy" by Sharon Bertsch McGrayne
- 
+
 ### Previous years
- 
+
 * "The Long Tail: Why the Future of Business is Selling Less of More" by Chris Anderson
 * "The Lady Tasting Tea: How Statistics Revolutionized Science in the Twentieth Century" by David Salsburg
 * "The Joy of Pi" by David Blatner
