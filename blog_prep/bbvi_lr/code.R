@@ -108,12 +108,6 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
     mus[t,] = mu
     sigma_sq = exp(log_sigma_sq)
     samples = mvrnorm(S, mu, diag(sigma_sq))
-    # grad_acc = rep(0.0, 2*P)
-    # for(i in 1:nrow(samples)){
-    #   z_sample = samples[i, ]
-    #   grad_acc = grad_acc + elbo_grad(z_sample, mu, sigma_sq, y, X, P, prior_sigma)
-    # }
-    # grad_estimate = grad_acc/S
     grad_estimate = elbo_grad_samples(samples, mu, sigma_sq, y, X, P, prior_sigma)
     G = G + (grad_estimate %*% t(grad_estimate))
     rho_t = (eta * 1/sqrt(diag(G)))
