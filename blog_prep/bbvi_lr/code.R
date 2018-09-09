@@ -44,27 +44,64 @@ create_data = function(N, P, real_mu, seed = 0){
 }
 
 
-elbo_grad = function(z_sample, mu, sigma_sq, y, X, P, prior_sigma){
-  score_mu = (z_sample - mu)/(sigma_sq)
-  score_logsigma_sq = (-1/(2*sigma_sq) + ((z_sample - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
-  aux_1 = y * as.numeric(log(sigmoid(dot(X, z_sample))))
-  aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, z_sample))))
-  log_p_aux_1 = sum(aux_1 + aux_2)
-  log_p_aux_2 = sum(log(dnorm(z_sample, zeros(P), prior_sigma*ones(P))))
-  log_p = log_p_aux_1 + log_p_aux_2
-  log_q = sum(norm_logpdf(z_sample, mu, sqrt(sigma_sq)))
-  grad = c(score_mu, score_logsigma_sq)*(log_p - log_q)
-  return(grad)
-}
-
-
-# elbo_grad = function(samples, mu, sigma_sq, y, X, P, prior_sigma){
-#   centered = t(t(samples) - mu)
-#   score_mu = t(t(centered)/sigma_sq)
-#   score_logsigma_sq = (-1/(2*sigma_sq) + ((samples - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
-#   aux_1 = y * as.numeric(log(sigmoid(dot(X, samples))))
-#   aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, samples))))
+# elbo_grad = function(z_sample, mu, sigma_sq, y, X, P, prior_sigma){
+#   score_mu = (z_sample - mu)/(sigma_sq)
+#   score_logsigma_sq = (-1/(2*sigma_sq) + ((z_sample - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
+#   aux_1 = y * as.numeric(log(sigmoid(dot(X, z_sample))))
+#   aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, z_sample))))
 #   log_p_aux_1 = sum(aux_1 + aux_2)
+#   log_p_aux_2 = sum(log(dnorm(z_sample, zeros(P), prior_sigma*ones(P))))
+#   log_p = log_p_aux_1 + log_p_aux_2
+#   log_q = sum(norm_logpdf(z_sample, mu, sqrt(sigma_sq)))
+#   grad = c(score_mu, score_logsigma_sq)*(log_p - log_q)
+#   return(grad)
+# }
+
+
+# matrix_vector_operation = function(X, y, func){
+#   if(func == "+"){
+#     out = t(t(X) + y)
+#   }
+#   if(func == "-"){
+#     out = t(t(X) - y)
+#   }
+#   if(func == "*"){
+#     out = t(t(X) * y)
+#   }
+#   if(func == "/"){
+#     out = t(t(X) / y)
+#   }
+#   return(out)
+# }
+# 
+# 
+# matrix_vector_operation_2 = function(X, y, func){
+#   if(func == "+"){
+#     out = t(t(X) + y)
+#   }
+#   if(func == "-"){
+#     out = t(t(X) - y)
+#   }
+#   if(func == "*"){
+#     out = t(t(X) * y)
+#   }
+#   if(func == "/"){
+#     out = t(t(X) / y)
+#   }
+#   return(out)
+# }
+# 
+# elbo_grad_samples = function(samples, mu, sigma_sq, y, X, P, prior_sigma){
+#   centered = matrix_vector_operation(samples, mu, "-")
+#   score_mu = matrix_vector_operation(centered, sigma_sq, "/")
+#   score_logsigma_sq_1 = matrix_vector_operation(centered^2, 2*(sigma_sq^2), "/")
+#   score_logsigma_sq_2 = matrix_vector_operation(score_logsigma_sq_1, -1/(2*sigma_sq), "+")
+#   score_logsigma_sq = matrix_vector_operation(score_logsigma_sq_2, sigma_sq, "*")
+#   # score_logsigma_sq = (-1/(2*sigma_sq) + ((z_sample - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
+#   sigmoid_matrix = sigmoid(dot(X, t(samples)))
+#   aux_1 = matrix_vector_operation((log(sigmoid_matrix)), y, "*")
+#   aux_2 = matrix_vector_operation(log(1 - sigmoid_matrix), (1 - y), "*")
+#   log_p_aux_1 = colSums(aux_1 + aux_2)
 #   log_p_aux_2 = sum(log(dnorm(samples, zeros(P), prior_sigma*ones(P))))
 #   log_p = log_p_aux_1 + log_p_aux_2
 #   log_q = sum(norm_logpdf(samples, mu, sqrt(sigma_sq)))
