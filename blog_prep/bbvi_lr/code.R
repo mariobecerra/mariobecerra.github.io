@@ -57,26 +57,6 @@ elbo_grad = function(z_sample, mu, sigma_sq, y, X, P, prior_sigma){
   return(grad)
 }
 
-# elbo_grad = function(samples, mu, sigma_sq, y, X, P, prior_sigma, seed = 0){
-#   set.seed(seed)
-#   grad_acc = rep(0.0, 2*P)
-#   S = nrow(samples)
-#   for(i in 1:S){
-#     z_sample = samples[i, ]
-#     score_mu = (z_sample - mu)/(sigma_sq)
-#     score_logsigma_sq = (-1/(2*sigma_sq) + ((z_sample - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
-#     aux_0 = sigmoid(dot(X, z_sample))
-#     aux_1 = y * as.numeric(log(aux_0 + eps))
-#     aux_2 = (1 - y) * as.numeric(log(1 - aux_0 + eps))
-#     log_p_aux_1 = sum(aux_1 + aux_2)
-#     log_p_aux_2 = sum(log(dnorm(z_sample, zeros(P), prior_sigma*ones(P))))
-#     log_p = log_p_aux_1 + log_p_aux_2
-#     log_q = sum(norm_logpdf(z_sample, mu, sqrt(sigma_sq)))
-#     grad_now = c(score_mu, score_logsigma_sq)*(log_p - log_q)
-#     grad_acc = grad_acc + grad_now
-#   }
-#   return(grad_acc)
-# }
 
 # elbo_grad = function(samples, mu, sigma_sq, y, X, P, prior_sigma){
 #   centered = t(t(samples) - mu)
@@ -92,62 +72,26 @@ elbo_grad = function(z_sample, mu, sigma_sq, y, X, P, prior_sigma){
 #   return(grad)
 # }
 
-# vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, seed = 0){
-#   set.seed(seed)
-#   N = dim(X)[1]
-#   P = dim(X)[2]
-#   mu = rnorm(P)
-#   G = matrix(zeros(2*P*2*P), ncol = 2*P)
-#   log_sigma_sq = rnorm(P)
-#   mus = matrix(zeros(max_iter*P), ncol = P)
-#   delta_lambda = zeros(max_iter)
-#   
-#   cat("Begin optimization\n\n")
-#   for(t in 1:max_iter){
-#     print(t)
-#     mus[t,] = mu
-#     sigma_sq = exp(log_sigma_sq)
-#     samples = mvrnorm(S, mu, diag(sigma_sq))
-#     # grad_acc = rep(0.0, 2*P)
-#     # for(i in 1:nrow(samples)){
-#     #   z_sample = samples[i, ]
-#     #   grad_acc = grad_acc + elbo_grad(z_sample, mu, sigma_sq, y, X, P, prior_sigma)
-#     # }
-#     grad_estimate = elbo_grad(samples, mu, sigma_sq, y, X, P, prior_sigma)
-#     G = G + (grad_estimate %*% t(grad_estimate))
-#     rho_t = (eta * 1/sqrt(diag(G)))
-#     mu_new = mu + rho_t[1:P] * grad_estimate[1:P]
-#     log_sigma_sq_new = log_sigma_sq + rho_t[(P+1):(2*P)] * grad_estimate[(P+1):(2*P)]
-#     delta_lambda_now = norm(mu_new - mu)
-#     delta_lambda[t] = delta_lambda_now
-#     if(t %% 100 == 1){
-#       cat("", "\n")
-#       cat("Iteration: ", t, "\n")
-#       cat("Mu: ", mu, "\n")
-#       cat("Sigma squared: ", exp(log_sigma_sq), "\n")
-#       cat("Delta lambda: ", delta_lambda_now, "\n")
-#     }
-#       
-#     if(delta_lambda_now < 0.0001){
-#       cat("Breaking\n\n")
-#       break
-#     }
-#     mu = mu_new
-#     log_sigma_sq = log_sigma_sq_new
-#   }
-#   
-#   cat(""    , "\n")
-#   cat("Optimization complete", "\n")
-#   cat("Final sigma_sq: ", exp(log_sigma_sq), "\n")
-#   cat("Final mu: ", mu, "\n")
-#   model_out = list(
-#     mu = mu, 
-#     sigma_sq = sigma_sq, 
-#     mus = mus[1:t,], 
-#     delta_lambda = delta_lambda[1:t]
-#   )
-#   return(model_out)
-# }
+
+elbo_grad_samples = function(samples, mu, sigma_sq, y, X, P, prior_sigma){
+  grad_acc = rep(0.0, 2*P)
+  S = nrow(samples)
+  for(i in 1:S){
+    z_sample = samples[i, ]
+    score_mu = (z_sample - mu)/(sigma_sq)
+    score_logsigma_sq = (-1/(2*sigma_sq) + ((z_sample - mu)^2)/(2*(sigma_sq^2))) * sigma_sq
+    aux_1 = y * as.numeric(log(sigmoid(dot(X, z_sample))))
+    aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, z_sample))))
+    log_p_aux_1 = sum(aux_1 + aux_2)
+    log_p_aux_2 = sum(log(dnorm(z_sample, zeros(P), prior_sigma*ones(P))))
+    log_p = log_p_aux_1 + log_p_aux_2
+    log_q = sum(norm_logpdf(z_sample, mu, sqrt(sigma_sq)))
+    grad_i = c(score_mu, score_logsigma_sq)*(log_p - log_q)
+    grad_acc = grad_acc + grad_i/S
+  }
+  return(grad_acc)
+}
+
 
 vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, seed = 0){
   set.seed(seed)
@@ -164,12 +108,13 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
     mus[t,] = mu
     sigma_sq = exp(log_sigma_sq)
     samples = mvrnorm(S, mu, diag(sigma_sq))
-    grad_acc = rep(0.0, 2*P)
-    for(i in 1:nrow(samples)){
-      z_sample = samples[i, ]
-      grad_acc = grad_acc + elbo_grad(z_sample, mu, sigma_sq, y, X, P, prior_sigma)
-    }
-    grad_estimate = grad_acc/S
+    # grad_acc = rep(0.0, 2*P)
+    # for(i in 1:nrow(samples)){
+    #   z_sample = samples[i, ]
+    #   grad_acc = grad_acc + elbo_grad(z_sample, mu, sigma_sq, y, X, P, prior_sigma)
+    # }
+    # grad_estimate = grad_acc/S
+    grad_estimate = elbo_grad_samples(samples, mu, sigma_sq, y, X, P, prior_sigma)
     G = G + (grad_estimate %*% t(grad_estimate))
     rho_t = (eta * 1/sqrt(diag(G)))
     mu_new = mu + rho_t[1:P] * grad_estimate[1:P]
