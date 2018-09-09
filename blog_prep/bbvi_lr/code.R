@@ -7,7 +7,7 @@ library(ggplot2)
 theme_set(theme_bw())
 
 max_iter = 20000
-eps = 1e-8
+eps = 1e-16
 
 # Functions ---------------------------------------------------------------
 
@@ -150,7 +150,7 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
     rho_t = (eta * 1/sqrt(diag(G)))
     mu_new = mu + rho_t[1:P] * grad_estimate[1:P]
     log_sigma_sq_new = log_sigma_sq + rho_t[(P+1):(2*P)] * grad_estimate[(P+1):(2*P)]
-    delta_lambda_now = norm(mu_new - mu)
+    delta_lambda_now = norm((mu_new - mu)/mu)
     delta_lambda[t] = delta_lambda_now
     if(t %% 100 == 1){
       cat("", "\n")
@@ -186,7 +186,7 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
 
 real_mu = c(-2, -1, 1, 2)
 
-dat = create_data(2000, 4, real_mu, seed = 0)
+dat = create_data(200, 4, real_mu, seed = 0)
 
 mod = vi(dat$X, dat$y, S = 5, max_iter = max_iter, seed = 0)
 
