@@ -115,8 +115,8 @@ elbo_grad_samples = function(samples, mu, sigma_sq, y, X, P, prior_sigma){
     centered = z_sample - mu
     score_mu = centered/sigma_sq
     score_logsigma_sq = (-1/(2*sigma_sq) + (centered^2)/(2*(sigma_sq^2))) * sigma_sq
-    aux_1 = y * as.numeric(log(sigmoid(dot(X, z_sample))))
-    aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, z_sample))))
+    aux_1 = y * as.numeric(log(sigmoid(dot(X, z_sample)) + eps))
+    aux_2 = (1 - y) * as.numeric(log(1 - sigmoid(dot(X, z_sample)) + eps))
     log_p_aux_1 = sum(aux_1 + aux_2)
     log_p_aux_2 = sum(log(dnorm(z_sample, zeros(P), prior_sigma*ones(P))))
     log_p = log_p_aux_1 + log_p_aux_2
@@ -139,7 +139,7 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
   G = matrix(zeros(2*P*2*P), ncol = 2*P)
   log_sigma_sq = rnorm(P)
   mus = matrix(zeros(max_iter*P), ncol = P)
-  delta_lambda = zeros(max_iter)
+  norm_delta_lambda = zeros(max_iter)
   ELBO = zeros(max_iter)
   
   cat("Begin optimization\n\n")
@@ -154,19 +154,20 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
     rho_t = (eta * 1/sqrt(diag(G)))
     mu_new = mu + rho_t[1:P] * grad_estimate[1:P]
     log_sigma_sq_new = log_sigma_sq + rho_t[(P+1):(2*P)] * grad_estimate[(P+1):(2*P)]
-    delta_lambda_now = norm(mu_new - mu)
-    delta_lambda[t] = delta_lambda_now
+    norm_delta_lambda_t = norm(mu_new - mu)
+    norm_delta_lambda[t] = norm_delta_lambda_t
+    stop_criterion = norm_delta_lambda_t/norm(mu)
     if(t %% 100 == 1){
       cat("", "\n")
       cat("Iteration: ", t, "\n")
       cat("Mu: ", mu, "\n")
       cat("Sigma squared: ", exp(log_sigma_sq), "\n")
-      cat("Delta lambda: ", delta_lambda_now, "\n")
+      cat("Delta lambda: ", norm_delta_lambda_t, "\n")
       cat("Estimate gradient norm: ", norm(grad_estimate), "\n")
       cat("Estimate ELBO: ", ELBO[t], "\n")
+      cat("Stop criterion value: ", stop_criterion, "\n")
     }
-    
-    if(delta_lambda_now < 0.001){
+    if(stop_criterion < 0.00001){
       cat("Breaking\n\n")
       break
     }
@@ -176,13 +177,14 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
   
   cat(""    , "\n")
   cat("Optimization complete", "\n")
-  cat("Final sigma_sq: ", exp(log_sigma_sq), "\n")
   cat("Final mu: ", mu, "\n")
+  cat("Final sigma_sq: ", exp(log_sigma_sq), "\n")
+  cat("Stop criterion value: ", stop_criterion, "\n")
   model_out = list(
     mu = mu, 
     sigma_sq = sigma_sq, 
     mus = mus[1:t,], 
-    delta_lambda = delta_lambda[1:t],
+    norm_delta_lambda = norm_delta_lambda[1:t],
     ELBO = ELBO[1:t]
   )
   return(model_out)
@@ -191,7 +193,7 @@ vi = function(X, y, prior_sigma = 10000, max_iter = 6000, S = 10, eta = 1.0, see
 
 # Run VI ------------------------------------------------------------------
 
-real_mu = c(-1, 1)
+real_mu = c(-10, 10)
 
 dat = create_data(300, real_mu, seed = 0)
 
@@ -218,7 +220,7 @@ mod$mus %>%
   mutate(Iteration = 1:nrow(.)) %>% 
   gather(key, value, -Iteration) %>% 
   ggplot() +
-  #geom_hline(yintercept = real_mu, color = "dark grey") +
+  geom_hline(yintercept = real_mu, linetype = "dashed") +
   geom_line(aes(Iteration, value, colour = key)) +
   ylab("Variational mean") 
 
@@ -229,10 +231,10 @@ tibble(ELBO = mod$ELBO) %>%
   geom_line(aes(Iteration, ELBO))
 
 
-tibble(delta_lambda = mod$delta_lambda) %>% 
+tibble(norm_delta_lambda = mod$norm_delta_lambda) %>% 
   mutate(Iteration = 1:nrow(.)) %>% 
   ggplot() +
-  geom_line(aes(Iteration, delta_lambda))
+  geom_line(aes(Iteration, norm_delta_lambda))
 
 
 
