@@ -37,6 +37,8 @@ permalink: /other/
 
 ### 2018
 
+* "The Handmaid's Tale" by Margaret Atwood
+* "The Silkworm" by Robert Galbraith / J.K. Rowling
 * "The Cuckoo's Calling" by Robert Galbraith / J.K. Rowling
 * "To Kill a Mockingbird" by Harper Lee
 * "The Mystery Knight" by George R.R. Martin
@@ -66,7 +68,7 @@ permalink: /other/
 * "The Simpsons and Their Mathematical Secrets" by Simon Singh
 * "The Theory That Would Not Die: How Bayes' Rule Cracked the Enigma Code, Hunted Down Russian Submarines, and Emerged Triumphant from Two Centuries of Controversy" by Sharon Bertsch McGrayne
 
-### Previous years
+### Other books
 
 * "The Long Tail: Why the Future of Business is Selling Less of More" by Chris Anderson
 * "The Lady Tasting Tea: How Statistics Revolutionized Science in the Twentieth Century" by David Salsburg
