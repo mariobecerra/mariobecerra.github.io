@@ -199,6 +199,9 @@ dat = create_data(300, real_mu, seed = 0)
 
 mod = vi(dat$X, dat$y, S = 30, max_iter = max_iter, seed = 0)
 
+
+# VI results --------------------------------------------------------------
+
 mu = mod$mu
 sigma = sqrt(mod$sigma_sq)
 colours = c('red', 'blue', 'dark green', 'green')[1:length(real_mu)]
@@ -224,6 +227,13 @@ mod$mus %>%
   geom_line(aes(Iteration, value, colour = key)) +
   ylab("Variational mean") 
 
+mod$mus %>% 
+  as_tibble() %>% 
+  ggplot() +
+  geom_point(data = tibble(V1 = real_mu[1], V2 = real_mu[2]),
+             aes(V1, V2),
+             colour = "black", fill = "white", size = 2, stroke = 2, shape = 21) +
+  geom_path(aes(V1, V2), size = 0.3, alpha = 0.7) 
 
 tibble(ELBO = mod$ELBO) %>% 
   mutate(Iteration = 1:nrow(.)) %>% 
@@ -239,4 +249,16 @@ tibble(norm_delta_lambda = mod$norm_delta_lambda) %>%
 
 
 
+# Posterior predictive ----------------------------------------------------
 
+test_dat = create_data(20, real_mu, seed = 0)
+
+post_samples = mvrnorm(1000, mu = mod$mu, Sigma = diag(mod$sigma_sq))
+
+probs = sigmoid(post_samples %*% t(test_dat$X))
+
+mean_probs = colMeans(probs)
+
+preds = ifelse(mean_probs > 0.5, 1, 0)
+
+table(preds, test_dat$y)
