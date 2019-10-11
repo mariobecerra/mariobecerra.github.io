@@ -5,8 +5,8 @@ permalink: /contact/
 ---
 
 <p><u>Email:</u> mbecerracontreras@gmail.com</p>
-<p><u>Phone number:</u> +52 1 55 1513 0162</p>
-<p><u>Location:</u> Mexico City</p>
+<p><u>Phone number:</u> +52 55 1513 0162</p>
+<p><u>Location:</u> Leuven, Belgium</p>
 
 
 ## Around the web
