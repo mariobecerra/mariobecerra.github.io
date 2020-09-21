@@ -27,7 +27,6 @@ permalink: /contact/
   <br>
   <label>
     <br>
-    <br>
     Your message:
     <br>
     <textarea name="message"></textarea>
@@ -54,3 +53,6 @@ permalink: /contact/
   </li>
 {% endif %}
 
+<br>
+<br>
+<br>
