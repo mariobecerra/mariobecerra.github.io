@@ -21,11 +21,15 @@ permalink: /contact/
 >
   <label>
     Your email:
+    <br>
     <input type="text" name="_replyto">
   </label>
   <br>
   <label>
+    <br>
+    <br>
     Your message:
+    <br>
     <textarea name="message"></textarea>
   </label>
   <br>
