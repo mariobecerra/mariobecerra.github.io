@@ -1,0 +1,584 @@
+---
+# title: ""
+author: "Mario Becerra"
+# date: ""
+output: html_document
+---
+
+In this document, I show a simple Bayesian linear regression model for applied mathematicians' salary. I compare the same model with two different priors on the coefficients: normal and Laplace.
+
+```{r setup, echo = T, message=FALSE, warning=FALSE}
+library(R2jags)
+library(tidyverse)
+library(GGally)
+library(knitr)
+library(gridExtra)
+set.seed(124362)
+
+theme_set(theme_bw())
+
+opts_chunk$set(echo = T, message=F, warning=FALSE, cache = T, eval = F)
+```
+
+
+Consider the data given shown in the following table which describes a data set used to evaluate the relation between intermediate and senior level annual salaries of bachelor's and master's level mathematicians ($y$, in thousand dollars) and an index of work quality ($x1$), number of years of experience ($x2$), and an index of publication success ($x3$).
+
+
+```{r, eval = T}
+salaries_string <- 
+  "   y       x1     x2     x3
+33.2    3.5    9.0    6.1
+40.3    5.3   20.0    6.4
+38.7    5.1   18.0    7.4
+46.8    5.8   33.0    6.7
+41.4    4.2   31.0    7.5
+37.5    6.0   13.0    5.9
+39.0    6.8   25.0    6.0
+40.7    5.5   30.0    4.0
+30.1    3.1    5.0    5.8
+52.9    7.2   47.0    8.3
+38.2    4.5   25.0    5.0
+31.8    4.9   11.0    6.4
+43.3    8.0   23.0    7.6
+44.1    6.5   35.0    7.0
+42.8    6.6   39.0    5.0
+33.6    3.7   21.0    4.4
+34.2    6.2    7.0    5.5
+48.0    7.0   40.0    7.0
+38.0    4.0   35.0    6.0
+35.9    4.5   23.0    3.5
+40.4    5.9   33.0    4.9
+36.8    5.6   27.0    4.3
+45.2    4.8   34.0    8.0
+35.1    3.9   15.0    5.0
+"
+
+dat <- read.table(textConnection(salaries_string), header = T)
+
+dat %>% 
+  kable()
+```
+
+
+The data can be found in any of the following links:
+
+- http://www.stat.purdue.edu/~boli/stat512/datasets/CH06PR18.DAT
+- http://www.stat.purdue.edu/~wsharaba/stat512/Datasets/ch06pr18.dat
+- http://www.stat.missouri.edu/~dsun/321/hw8.dat
+- http://allman.rhon.itam.mx/~lnieto/index_archivos/salarios.txt
+- http://www.utsc.utoronto.ca/~butler/r/mathsal.txt
+- http://people.stat.sfu.ca/~pritamr/stat350_05/data/MathSalaries-data_dat.htm
+
+Let's suppose we're interested in the relationship between the salary and the covariates already mentioned.
+
+We can see the relationship between the variables in the following plot.
+
+```{r, cache=TRUE, eval = T}
+ggpairs(dat) 
+```
+
+Salary has a positive correlation with the three covariates, although x3 seems to have a decreasing variance, while x1 and x2 seem to have a constant variance. We'll ignore this for now and assume that there's a linear relation with constant variance between the salary and the covariates.
+
+### 1) Normal a priori distribution
+
+We'll adjust a linear model of the following form:
+
+$$
+Y_i = \beta_1 +  \beta_2 x_{i1} + \beta_3 x_{i2} + \beta_4 x_{i3} + \varepsilon_i  \\
+\varepsilon \sim \mathrm{N}(\underline{0}, \lambda I) \\
+\beta_j \sim \mathrm{N}(0, \lambda_j) \\
+\lambda \sim \mathrm{Ga}(a, b)
+$$
+
+for $i = 1, 2, ..., n$, $j = 1, ..., 4$, and $n = 24$. Where $\lambda$ is the precision, i.e., if $\sigma^2$ is the variance, then $\lambda = \frac{1}{\sigma^2}$. We''l use non-informative prior distributions, so $\lambda_j = 0.001$ for each $j = 1, ..., 4$, $a = 0.001$ and $b = 0.001$.
+
+We'll implement the model in JAGS. The description of the model is:
+
+```{r, echo=T, eval = T}
+mod_string_1 <- "
+model
+{
+  #Likelihood
+  for (i in 1:n) {
+  y[i] ~ dnorm(mu[i], lambda)
+  mu[i]<-beta[1]+beta[2]*x1[i] + beta[3]*x2[i] + beta[4]*x3[i]
+  }
+  #Priors 
+  for (j in 1:4) { 
+  beta[j] ~ dnorm(0,0.001) 
+  }
+  lambda ~ dgamma(0.001,0.001)
+  sigma = 1.0/sqrt(lambda)
+  #Prediction
+  for (i in 1:length(y)) { 
+  yf1[i] ~ dnorm(mu[i], lambda) 
+  }
+}
+"
+```
+
+We run a chain of 10,000 iterations and a warm-up of 1000.
+
+```{r run_jags_1, include = F, eval = T}
+
+jags_data <- as.list(dat)
+jags_data$n <- length(dat$y)
+
+#-Defining inits-
+inits_1 <- function(){
+  list(beta = rep(0, 4),
+       yf1 = rep(0, nrow(dat)),
+       lambda = 1)
+}
+
+# Parameters to monitor
+jags_params_1 <- c("beta", "sigma", "yf1")
+
+mod_jags_sims_1 <- jags(
+  jags_data,
+  inits_1,
+  jags_params_1,
+  model.file = textConnection(mod_string_1),
+  n.iter = 100000,
+  n.chains = 1,
+  n.burnin = 1000, 
+  n.thin = 1)
+
+```
+
+We can see in the following plots the convergence for each parameter we're monitoring. The subplot on the top left shows the convergence of the chains, on the top right we see the posterior distribution with the mean and 95\% quantile-based probability interval, on the bottom left the cummulative mean of the parameter and on the bottom right the autocorrelation of the samples.
+
+```{r, eval = T, include=F}
+
+# Function that plots convergence.
+
+
+check_chains <- function(sims, var){
+  sims <- sims %>% 
+    select_(var) %>% 
+    rename_("z" = var) %>% 
+    mutate(ix = 1:nrow(.))
+  
+  g1 <- sims %>% 
+    ggplot() + 
+    geom_line(aes(ix, z), alpha = 0.9, size = 0.2)
+  
+  g2 <- sims %>% 
+    ggplot(aes(z))+
+    geom_histogram(aes(y=..density..),colour = 'black', fill = 'white') +
+    geom_density() +
+    geom_vline(xintercept = c(quantile(sims$z,0.025),
+                              quantile(sims$z,0.975),
+                              mean(sims$z)),
+               size = 0.7,
+               linetype = c('dotted','dotted','dashed')) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  g3 <- sims %>% 
+    mutate(cum_mean = cumsum(z)/(1:length(z))) %>% 
+    ggplot(aes(ix, cum_mean)) +
+    geom_line() +
+    theme_bw() +
+    ylab("Cummulative mean")
+  
+  lag_max <- floor(+10*log(length(sims$z),10))
+  acf_df <- tibble(Lag = 0:lag_max,
+                   ACF = drop(acf(sims$z, plot = FALSE)$acf))
+  
+  g4 <- acf_df %>% 
+    ggplot(mapping = aes(x = Lag, y = ACF)) +
+    geom_hline(aes(yintercept = 0)) +
+    geom_segment(mapping = aes(xend = Lag, yend = 0)) +
+    theme_bw()
+  
+  grid.arrange(g1, g2, g3, g4, ncol=2, nrow=2, top=var)
+}
+
+
+```
+
+
+```{r chain_plots_1, eval = T}
+simulations_1 <- as_tibble(mod_jags_sims_1$BUGSoutput$sims.array) %>% 
+  select(c(grep("beta", names(.)),
+           grep("sigma", names(.)))) %>% 
+  set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
+
+for(x in names(simulations_1)){
+  check_chains(simulations_1, x)
+}
+
+```
+
+In this table we can see the mean value and some relevant quantiles of the posterior distribution of the parameters:
+
+```{r, eval = T}
+# Summary table
+mod_jags_sims_1$BUGSoutput$summary %>% 
+  as.data.frame() %>% 
+  mutate(param = row.names(.)) %>% 
+  slice(c(grep(c("beta"), param),
+          grep(c("sigma"), param))) %>% 
+  select(c(8, 1, 3, 7)) %>% 
+  kable()
+
+
+```
+
+And now we see the residuals of each of the 24 observations.
+
+```{r, eval = T}
+param_means_1 <- simulations_1 %>% 
+  select(grep("beta", names(.))) %>% 
+  sapply(mean)
+
+X_1 <- dat %>% 
+  mutate(x0 = 1) %>% 
+  select(x0, x1, x2, x3) %>% 
+  as.matrix()
+
+yhat_1 = drop(X_1 %*% param_means_1)
+
+preds_1 <- mod_jags_sims_1$BUGSoutput$sims.array %>% 
+  as_tibble() %>% 
+  select(grep("yf1", names(.))) %>% 
+  apply(., 2, function(x){
+    coda::HPDinterval(as.mcmc(x)) %>% 
+      as_tibble()
+  }) %>% 
+  bind_rows() %>% 
+  mutate(ix = 1:nrow(.),
+         y = dat$y,
+         yhat = yhat_1,
+         resid = y - yhat)
+
+preds_1 %>%     
+  ggplot() +
+  geom_point(aes(ix, resid)) 
+
+```
+
+In the next plot we see the residuals against the adjusted value. We see no patterns in the results.
+
+```{r, eval = T}
+
+preds_1 %>% 
+  ggplot() +
+  geom_point(aes(yhat, resid)) 
+
+```
+
+And finally, the observed value against the adjusted value, and the 95\% probability prediction intervals.
+
+```{r, eval = T}
+preds_1 %>% 
+  ggplot(aes(x = y)) +
+  geom_point(aes(y = yhat)) +
+  geom_segment(aes(xend = y, y = lower, yend = upper)) +
+  geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) +
+  xlab("Observed")+
+  ylab("Estimated")
+```
+
+Now, let's suppose we have three new employees with the following vectors: $x_{1F}^T = (5.4, 17, 6)$, $x_{2F}^T = (6.2, 12, 5.8)$ and $x_{3F}^T = (6.4, 21, 6.1)$ and we want an estimate of how much they would earn based on these vectors. 
+
+We first show a table with a point estimate (mean of the posterior distribution) and their corresponding 95\% HDI. We further show the final predictive distributions with the point estimates and HDIs.
+
+```{r, eval = T}
+x1f = c(5.4, 17, 6)
+x2f = c(6.2, 12, 5.8)
+x3f = c(6.4, 21, 6.1)
+
+xf <- cbind(rep(1, 3),
+            rbind(x1f, x2f, x3f))
+```
+
+
+```{r final_predictives_1, fig.asp = 0.5, eval = T}
+final_predictives_xf_1 <- apply(xf, 1, function(x){
+  mu_yf <- drop(as.matrix(select(simulations_1, -sigma)) %*% xf[1,])
+  yf <- rnorm(nrow(simulations_1), mu_yf, simulations_1$sigma)
+  return(yf)
+}) %>% 
+  as_tibble()
+
+hdi_preds_f_1 <- tibble(emp = names(final_predictives_xf_1),
+                        point_est = colMeans(final_predictives_xf_1)) %>% 
+  bind_cols(
+    final_predictives_xf_1 %>% 
+      apply(., 2, function(x){
+        coda::HPDinterval(as.mcmc(x)) %>% 
+          as_tibble()
+      }) %>% 
+      bind_rows()
+  )
+
+hdi_preds_f_1 %>% 
+  kable()
+
+
+plots_1 <- lapply(names(final_predictives_xf_1), function(x) {
+  intercepts <- hdi_preds_f_1 %>% 
+    filter(emp == x)
+  
+  gg <- final_predictives_xf_1 %>% 
+    select("value" = x) %>% 
+    ggplot(aes(x = value)) +
+    geom_histogram(aes(y=..density..),
+                   colour = 'black', 
+                   fill = 'white') +
+    geom_density() +
+    geom_vline(aes(xintercept = intercepts$point_est), 
+               linetype = 'dashed') +
+    geom_vline(aes(xintercept = intercepts$upper), 
+               linetype = 'dotted') +
+    geom_vline(aes(xintercept = intercepts$lower), 
+               linetype = 'dotted')  +
+    ggtitle(x)
+  
+  return(gg)
+})
+
+do.call("grid.arrange", c(plots_1, ncol=3))
+
+```
+
+
+
+### 2) Laplace a priori
+
+We now try a different prior distribution. Instead of having normally distributed $\beta$ coefficients, we'll have Laplace or double-exponential distributions. So this model is:
+
+$$
+Y_i = \beta_1 +  \beta_2 x_{i1} + \beta_3 x_{i2} + \beta_4 x_{i3} + \varepsilon_i  \\
+\varepsilon \sim \mathrm{N} (\underline{0}, \lambda I) \\
+\beta_j \sim \mathrm{Laplace}(0, 0.001) \\
+\lambda \sim \mathrm{Ga}(a, b)
+$$
+
+for $i = 1, 2, ..., n$, $j = 1, ..., 4$, and $n = 24$. Once more, $a = 0.001$ y $b = 0.001$.
+
+Model description:
+
+```{r, echo=T, eval = T}
+mod_string_2 <- "
+model
+{
+  #Likelihood
+  for (i in 1:n) {
+  y[i] ~ dnorm(mu[i], lambda)
+  mu[i]<-beta[1]+beta[2]*x1[i] + beta[3]*x2[i] + beta[4]*x3[i]
+  }
+  #Priors 
+  for (j in 1:4) { 
+  beta[j] ~ ddexp(0,0.001)
+  }
+  lambda ~ dgamma(0.001,0.001)
+  sigma = 1.0/sqrt(lambda)
+  #Prediction
+  for (i in 1:length(y)) { 
+  yf1[i] ~ dnorm(mu[i], lambda) 
+  }
+}
+"
+```
+
+We run a chain of 50,000 iterations and a warm-up of 5000. In addition, we select evry 5 relizations of the chain to reduce autocorrelation (n.thin = 5).
+
+```{r run_jags_2, include = F, eval = T}
+
+#-Defining inits
+inits_2 <- function(){
+  list(beta = rep(0, 4),
+       yf1 = rep(0, nrow(dat)),
+       lambda = 1)
+}
+
+# Parameters to monitor
+jags_params_2 <- c("beta", "sigma", "yf1")
+
+mod_jags_sims_2 <- jags(
+  jags_data,
+  inits_2,
+  jags_params_2,
+  model.file = textConnection(mod_string_2),
+  n.iter = 100000,
+  n.chains = 1,
+  n.burnin = 5000, 
+  n.thin = 5)
+
+```
+
+We can do convergence analysis and see that everything looks good:
+
+```{r, eval = T}
+
+simulations_2 <- as_tibble(mod_jags_sims_2$BUGSoutput$sims.array) %>% 
+  select(c(grep("beta", names(.)),
+           grep("sigma", names(.)))) %>% 
+  set_names(c("beta_1", "beta_2", "beta_3", "beta_4", "sigma"))
+
+```
+
+```{r laplace_convergence_plots, eval = T}
+for(x in names(simulations_2)){
+  check_chains(simulations_2, x)
+}
+
+```
+
+
+We can see again the mean value and some relevant quantiles of the posterior distribution of the parameters:
+
+
+```{r, eval = T}
+#Tabla resumen
+mod_jags_sims_2$BUGSoutput$summary %>% 
+  as.data.frame() %>% 
+  mutate(param = row.names(.)) %>% 
+  slice(c(grep(c("beta"), param),
+          grep(c("sigma"), param))) %>% 
+  select(c(8, 1, 3, 7)) %>% 
+  kable()
+
+```
+
+Residuals of the 24 observations:
+
+```{r, eval = T}
+param_means_2 <- simulations_2 %>% 
+  select(grep("beta", names(.))) %>% 
+  sapply(mean)
+
+X_2 <- dat %>% 
+  mutate(x0 = 1) %>% 
+  select(x0, x1, x2, x3) %>% 
+  as.matrix()
+
+yhat_2 = drop(X_2 %*% param_means_2)
+
+
+preds_2 <- mod_jags_sims_2$BUGSoutput$sims.array %>% 
+  as_tibble() %>% 
+  select(grep("yf1", names(.))) %>% 
+  apply(., 2, function(x){
+    coda::HPDinterval(as.mcmc(x)) %>% 
+      as_tibble()
+  }) %>% 
+  bind_rows() %>% 
+  mutate(ix = 1:nrow(.),
+         y = dat$y,
+         yhat = yhat_2,
+         resid = y - yhat)
+
+preds_2 %>%     
+  ggplot() +
+  geom_point(aes(ix, resid))
+
+```
+
+Residuals against adjusted values. Once again, looks good because we have no patterns.
+
+```{r, eval = T}
+preds_2 %>% 
+  ggplot() +
+  geom_point(aes(yhat, resid))
+
+```
+
+Finally, the observed value against the adjusted value, and the 95\% probability prediction intervals.
+
+```{r, eval = T}
+
+preds_2 %>% 
+  ggplot(aes(x = y)) +
+  geom_point(aes(y = yhat)) +
+  geom_segment(aes(xend = y, y = lower, yend = upper)) +
+  geom_abline(slope = 1, linetype="longdash", alpha = 0.7, size = 0.4) 
+```
+
+Once again, for the three new employees we first show a table with a point estimate (mean of the posterior distribution) and their corresponding 95\% HDI. We further show the final predictive distributions with the point estimates and HDIs.
+
+```{r, eval = T}
+x1f = c(5.4, 17, 6)
+x2f = c(6.2, 12, 5.8)
+x3f = c(6.4, 21, 6.1)
+
+xf <- cbind(rep(1, 3),
+            rbind(x1f, x2f, x3f))
+```
+
+
+```{r final_predictives_2, fig.asp = 0.5, eval = T}
+final_predictives_xf_2 <- apply(xf, 1, function(x){
+  mu_yf <- drop(as.matrix(select(simulations_2, -sigma)) %*% xf[1,])
+  yf <- rnorm(nrow(simulations_2), mu_yf, simulations_2$sigma)
+  return(yf)
+}) %>% 
+  as_tibble()
+
+hdi_preds_f_2 <- tibble(emp = names(final_predictives_xf_2),
+                        point_est = colMeans(final_predictives_xf_2)) %>% 
+  bind_cols(
+    final_predictives_xf_2 %>% 
+      apply(., 2, function(x){
+        coda::HPDinterval(as.mcmc(x)) %>% 
+          as_tibble()
+      }) %>% 
+      bind_rows()
+  )
+
+hdi_preds_f_2 %>% 
+  kable()
+
+
+plots_2 <- lapply(names(final_predictives_xf_2), function(x) {
+  intercepts <- hdi_preds_f_2 %>% 
+    filter(emp == x)
+  
+  gg <- final_predictives_xf_2 %>% 
+    select("value" = x) %>% 
+    ggplot(aes(x = value)) +
+    geom_histogram(aes(y=..density..),
+                   colour = 'black', 
+                   fill = 'white') +
+    geom_density() +
+    geom_vline(aes(xintercept = intercepts$point_est), 
+               linetype = 'dashed') +
+    geom_vline(aes(xintercept = intercepts$upper), 
+               linetype = 'dotted') +
+    geom_vline(aes(xintercept = intercepts$lower), 
+               linetype = 'dotted')  +
+    ggtitle(x)
+  
+  return(gg)
+})
+
+do.call("grid.arrange", c(plots_2, ncol=3))
+
+```
+
+### Model comparison
+
+The first model (with the normal priors) had a DIC of `r mod_jags_sims_1$BUGSoutput$DIC`, while the second model (with the Laplace priors) had a DIC of `r mod_jags_sims_2$BUGSoutput$DIC`. The estimated parameters are:
+
+```{r, eval = T}
+
+tibble(
+  param = c(paste0("beta_", 1:4)),
+  Normal = param_means_1,
+  Laplace = param_means_2) %>% 
+  kable()
+```
+
+We can see that the're very similar, so the prior distribution didn't have much effect on the results.
+
+## Interpretation and conclusions
+
+With the fit model, we can make the following conclusions:
+
+* The intercept of the model is around 17, so one would expect that a mathematician with no quality (whatever that means in the context of this problem), no publications and no years of experience, would expect to earn around 17 thousand dollars a year.
+* By every year of experience, the mean yearly salary increases by around 320 dollars.
+* By every unit of work quality we increase, the mean yearly salary increases around 1 thousand dollars.
+* By every unit of publication index we increase, the mean yearly salary increases around 1.2 thousand dollars.
+

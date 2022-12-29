@@ -1,0 +1,72 @@
+---
+author: "Mario Becerra"
+output: html_document
+---
+
+```{r, echo = FALSE, message=F, warning=F}
+library(ggplot2)
+library(dplyr)
+set.seed(314)
+```
+
+There are many ways to estimate the value of $\pi$, some more efficient than others. One of them is using Monte Carlo simulation. The idea is that if you have a circle of radius 1, it will have an area of $\pi$. You can fit a circle within a square of area 4, such that they both have a centroid in the origin, like shown in the following image.
+
+```{r, echo = FALSE}
+circle <- tibble(x = seq(-1, 1, 0.001)) %>% 
+  mutate(y = sqrt(1 - x^ 2)) %>% 
+  bind_rows(
+    tibble(x = seq(1, -1, -0.001)) %>% 
+      mutate(y = -sqrt(1 - x^ 2)) 
+  )
+
+tibble(x = c(1, 1, -1, -1, 1),
+       y = c(1, -1, -1, 1, 1)) %>% 
+  ggplot() +
+  geom_path(aes(x, y)) +
+  geom_path(aes(x, y), data = circle) +
+  coord_equal() +
+  theme_bw()
+```
+
+Then, if one simulates $N$ points in the square, counts how many were inside the circle ($N_{in}$) and computes $\frac{N_{in}}{N}$, one gets a number close to $\frac{\pi}{4}$. And the bigger $N$ gets, the closer one is to the real value of $\pi$. So, to estimate $\pi$, one computes $4\frac{N_{in}}{N}$. An example of the simulated points can be seen in the following figure (done in R).
+
+```{r}
+tibble(x = runif(10000, -1, 1),
+               y = runif(10000, -1, 1)) %>% 
+  mutate(inside = x^2 + y^2 < 1) %>% 
+  ggplot() +
+  geom_point(aes(x, y, color = inside), size = 0.5) +
+  coord_equal() +
+  theme_bw()
+```
+
+Now, let's see how close we get to the value of $\pi$ as we use more and more points. The following image shows the estimate that we get for each $N$. We can see that as $N$ grows, we get closer and closer to the real value shown with the red horizontal line.
+
+```{r}
+
+N <- 100000
+
+data <- tibble(x = runif(N, -1, 1),
+               y = runif(N, -1, 1)) %>% 
+  mutate(inside = x^2 + y^2 < 1)
+
+sizes <- seq(100, N, 400)
+
+estimate <- sapply(sizes, function(n){
+  data2 <- data %>% 
+    sample_n(n) 
+  4*sum(data2$inside)/nrow(data2)
+})
+
+
+tibble(size = sizes,
+       estimate = estimate) %>% 
+  ggplot(aes(size, estimate)) +
+  geom_hline(yintercept = pi, size = 0.3, color = 'red') +
+  geom_point(size = 0.3) +
+  geom_line(group = 1, color = 'dark grey', alpha = 0.5) +
+  theme_bw()
+
+```
+
+We can see that the rate of convergence is slow. We had to simulate many points to get relatively close to the value of $\pi$. There are many more efficient methods to do this, but it's nice to see how with simulation we can get also estimate it.
