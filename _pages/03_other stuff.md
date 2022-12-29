@@ -6,11 +6,12 @@ permalink: /other/
 
 # Blog
 
-* <a href="https://mariobecerra.github.io/rblogging/2017/09/08/pi_estimation.html">pi_estimation</a>: Posted on 2017-09-08.
-* <a href="https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html">gd_and_sgd_regression</a>: Posted on 2017-09-11.
-* <a href="https://mariobecerra.github.io/rblogging/2017/10/28/math_salaries.html">math_salaries</a>: Posted on 2017-10-28.
-* <a href="https://mariobecerra.github.io/rblogging/2018/01/08/gd_shallow_ann.html">gd_shallow_ann</a>: Posted on 2018-01-08.
-* <a href="https://mariobecerra.github.io/rblogging/2018/02/27/sgd_linear_regression.html">sgd_linear_regression</a>: Posted on 2018-02-27.
+* [Pi estimation using simulation](https://mariobecerra.github.io/rblogging/2017/09/08/pi_estimation.html): Posted on 2017-09-08.
+* [Gradient Descent and Stochastic Gradient Descent for regression
+](https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html): Posted on 2017-09-11.
+* [Bayesian linear regression for applied mathematicians' salary](https://mariobecerra.github.io/rblogging/2017/10/28/math_salaries.html): Posted on 2017-10-28.
+* [Gradient descent for shallow neural networks](https://mariobecerra.github.io/rblogging/2018/01/08/gd_shallow_ann.html): Posted on 2018-01-08.
+* [Minibatch gradient descent for linear regression in Rcpp](https://mariobecerra.github.io/rblogging/2018/02/27/sgd_linear_regression.html): Posted on 2018-02-27.
 
 
 # Some school projects
