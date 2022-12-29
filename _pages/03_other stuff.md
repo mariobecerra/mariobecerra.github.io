@@ -4,6 +4,15 @@ title: Other stuff
 permalink: /other/
 ---
 
+# Blog
+
+* <a href="https://mariobecerra.github.io/rblogging/2017/09/08/pi_estimation.html>pi_estimation</a>: Posted on 2017-09-08.
+* <a href="https://mariobecerra.github.io/rblogging/2017/09/11/gd_and_sgd_regression.html>gd_and_sgd_regression</a>: Posted on 2017-09-11.
+* <a href="https://mariobecerra.github.io/rblogging/2017/10/28/math_salaries.html>math_salaries</a>: Posted on 2017-10-28.
+* <a href="https://mariobecerra.github.io/rblogging/2018/01/08/gd_shallow_ann.html>gd_shallow_ann</a>: Posted on 2018-01-08.
+* <a href="https://mariobecerra.github.io/rblogging/2018/02/27/sgd_linear_regression.html>sgd_linear_regression</a>: Posted on 2018-02-27.
+
+
 # Some school projects
 
 * <a href="../files/school_projects/GLM_Becerra_Lopez.pdf">Modeling house prices in NYC with a Bayesian hierarchical model (December 2017)</a>: Final project for my advanced regression class. Written in Spanish.
