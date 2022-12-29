@@ -24,12 +24,4 @@ permalink: /other/
 
 * <a href="../files/school_projects/PageRank.pdf">Page Rank algorithm (May 2014)</a>: School project on the application of the PageRank algorithm in determining important nodes in highway networks, electricity networks and neurons of a worm. Written in Spanish.
 
-# Blogs I follow
-
-* <a href="https://www.r-bloggers.com">R-bloggers</a>
-* <a href="http://varianceexplained.org/">David Robinson</a>
-* <a href="https://juliagalef.com/">Julia Galef</a>
-* <a href="http://andrewgelman.com/">Andrew Gelman</a>
-* <a href="https://www.johndcook.com/blog/">John D. Cook</a>
-
 
