@@ -15,7 +15,7 @@ permalink: /contact/
   </div>
 </div> -->
 
-Want to have a chat with me? Want to hire me for a freelance job? I can help you out! Just send me a message with your email address an I'll contact you as soon as possible.
+Want to have a chat with me? Just send me a message with your email address an I'll contact you as soon as possible.
 
 <form
   action="https://formspree.io/xoqpqdnj"
